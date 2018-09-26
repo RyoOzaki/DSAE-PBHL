@@ -87,7 +87,16 @@ class SparceAutoencoder(object):
         np.savez(f, **self.params)
 
     def load_params(self, f):
-        param = np.load(f)
-        assert param["input_dim"] == self.params["input_dim"]
-        assert param["hidden_dim"] == self.params["hidden_dim"]
-        self.params = param
+        params = np.load(f)
+        assert params["input_dim"] == self.params["input_dim"]
+        assert params["hidden_dim"] == self.params["hidden_dim"]
+        self.params = params
+
+    @classmethod
+    def load(cls, f):
+        params = np.load(f)
+        if "input_dim" not in params or "hidden_dim" not in params:
+            raise RuntimeError("{} does not have 'input_dim' or 'hidden_dim' or both.")
+        sae = SparseAutoencoder(params["input_dim"], params["hidden_dim"])
+        sae.load_params(f)
+        return sae

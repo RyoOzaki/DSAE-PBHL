@@ -49,6 +49,9 @@ class SAE(object):
     def decode(self, h_in):
         return np.tanh(np.dot(h_in, self.params["decode_W"]) + self.params["decode_b"])
 
+    def feature(self, x_in):
+        return self.encode(x_in)
+
     def fit(self, x_train, epoch=5, epsilon=0.000001):
         with tf.Session() as sess:
             optimizer = tf.train.AdamOptimizer().minimize(self.loss)
@@ -128,6 +131,9 @@ class SAE_PBHL(SAE):
         self.dec_bias = bias_variable([sum(n_in)], trainable=True, name="decode_b")
 
         self.restoration_layer = tf.tanh(tf.matmul(self.hidden_layer, self.dec_weight) + self.dec_bias)
+
+    def feature(self, x_in):
+        return self.encode(x_in)[:, self.param["hidden_dim"][0]]
 
     @classmethod
     def load(cls, f):

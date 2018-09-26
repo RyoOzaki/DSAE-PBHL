@@ -43,6 +43,23 @@ class SAE(object):
                                     )
         self.loss = self.restoration_loss + alpha * self.regularization_loss + beta * self.kl_divergence_loss
 
+    @property
+    def encode_weight(self):
+        return self.params["encode_W"]
+
+    @property
+    def encode_bias(self):
+        return self.params["encode_b"]
+
+    @property
+    def decode_weight(self):
+        return self.params["decode_W"]
+
+    @property
+    def decode_bias(self):
+        return self.params["decode_b"]
+
+
     def encode(self, x_in):
         return np.tanh(np.dot(x_in, self.params["encode_W"]) + self.params["encode_b"])
 
@@ -81,18 +98,24 @@ class SAE(object):
 
     def load_params(self, f):
         params = np.load(f)
-        assert params["input_dim"] == self.params["input_dim"]
-        assert params["hidden_dim"] == self.params["hidden_dim"]
-        self.params = params
+        self.load_params_by_dict(self, params)
+
+    def load_params_by_dict(self, dic):
+        if "input_dim" not in dic or "hidden_dim" not in dic:
+            raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
+        self.params = dic
 
     @classmethod
-    def load(cls, f):
-        params = np.load(f)
+    def load(cls, source):
+        if type(source) is dict:
+            params = source
+        else:
+            params = np.load(source)
         if "input_dim" not in params or "hidden_dim" not in params:
             raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
-        sae = SAE(params["input_dim"], params["hidden_dim"])
-        sae.load_params(f)
-        return sae
+        instance = cls(params["input_dim"], params["hidden_dim"])
+        instance.load_params_by_dict(params)
+        return instance
 
 class SAE_PBHL(SAE):
 
@@ -134,12 +157,3 @@ class SAE_PBHL(SAE):
 
     def feature(self, x_in):
         return self.encode(x_in)[:, self.param["hidden_dim"][0]]
-
-    @classmethod
-    def load(cls, f):
-        params = np.load(f)
-        if "input_dim" not in params or "hidden_dim" not in params:
-            raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
-        sae_pbhl = SAE_PBHL(params["input_dim"], params["hidden_dim"])
-        sae_pbhl.load_params(f)
-        return sae_pbhl

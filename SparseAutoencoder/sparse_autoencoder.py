@@ -16,14 +16,11 @@ def bias_variable(shape, **kwargs):
 class SparceAutoencoder():
 
     def __init__(self, n_in, n_hidden, alpha=0.003, beta=0.7, eta=0.5):
-        self.loss = None
-
         self.params = {"input_dim": n_in, "hidden_dim": n_hidden,
             "alpha": alpha, "beta": beta, "eta": eta,
             "encode_W": None, "encode_b": None,
             "decode_W": None, "decode_b": None
             }
-
         self._define_network(n_in, n_hidden)
         self._define_loss(alpha, beta, eta)
 
@@ -94,15 +91,3 @@ class SparceAutoencoder():
         assert param["input_dim"] == self.params["input_dim"]
         assert param["hidden_dim"] == self.params["hidden_dim"]
         self.params = np.load(f)
-
-#-------------------------------------------------------------------------------
-
-input_data_name  = "layer_datas/layer_{}.npy".format(0)
-output_data_name = "layer_datas/layer_{}.npy".format(0 + 1)
-
-data = np.load(input_data_name)
-data_N = data.shape[0]
-data_D = data.shape[1]
-
-sae = SparceAutoencoder(data_D, 8)
-sae.fit(data)

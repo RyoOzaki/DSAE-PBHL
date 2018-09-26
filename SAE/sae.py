@@ -13,7 +13,7 @@ def bias_variable(shape, **kwargs):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial, **kwargs)
 
-class SparceAutoencoder(object):
+class SAE(object):
 
     def __init__(self, n_in, n_hidden, alpha=0.003, beta=0.7, eta=0.5):
         self.params = {"input_dim": n_in, "hidden_dim": n_hidden,
@@ -28,13 +28,13 @@ class SparceAutoencoder(object):
         # Define network-----------
         self.input_layer = tf.placeholder(tf.float32, [None, n_in])
 
-        self.enc_weight = weight_variable([n_in, n_hidden], trainable=True, name="enc_W_{0}_{1}".format(n_in, n_hidden))
-        self.enc_bias = bias_variable([n_hidden], trainable=True, name="enc_b_{0}_{1}".format(n_in, n_hidden))
+        self.enc_weight = weight_variable([n_in, n_hidden], trainable=True, name="encode_W")
+        self.enc_bias = bias_variable([n_hidden], trainable=True, name="encode_b")
 
         self.hidden_layer = tf.tanh(tf.matmul(self.input_layer, self.enc_weight) + self.enc_bias)
 
-        self.dec_weight = weight_variable([n_hidden, n_in], trainable=True, name="dec_W_{0}_{1}".format(n_hidden, n_in))
-        self.dec_bias = bias_variable([n_in], trainable=True, name="dec_b_{0}_{1}".format(n_hidden, n_in))
+        self.dec_weight = weight_variable([n_hidden, n_in], trainable=True, name="decode_W")
+        self.dec_bias = bias_variable([n_in], trainable=True, name="decode_b")
 
         self.restoration_layer = tf.tanh(tf.matmul(self.hidden_layer, self.dec_weight) + self.dec_bias)
 
@@ -96,7 +96,7 @@ class SparceAutoencoder(object):
     def load(cls, f):
         params = np.load(f)
         if "input_dim" not in params or "hidden_dim" not in params:
-            raise RuntimeError("{} does not have 'input_dim' or 'hidden_dim' or both.")
-        sae = SparseAutoencoder(params["input_dim"], params["hidden_dim"])
+            raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
+        sae = SAE(params["input_dim"], params["hidden_dim"])
         sae.load_params(f)
         return sae

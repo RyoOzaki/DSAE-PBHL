@@ -17,5 +17,5 @@ setup(
     url='https://github.com/RyoOzaki/SparseAutoencoder',
     license=license,
     install_requires=['numpy', 'tensorflow'],
-    packages=find_packages(exclude=('SparseAutoencoder',))
+    packages=find_packages(exclude=('SparseAutoencoder','SparseAutoencoder.util'))
 )

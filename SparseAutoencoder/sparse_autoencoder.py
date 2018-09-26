@@ -13,7 +13,7 @@ def bias_variable(shape, **kwargs):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial, **kwargs)
 
-class SparceAutoencoder():
+class SparceAutoencoder(object):
 
     def __init__(self, n_in, n_hidden, alpha=0.003, beta=0.7, eta=0.5):
         self.params = {"input_dim": n_in, "hidden_dim": n_hidden,
@@ -90,4 +90,4 @@ class SparceAutoencoder():
         param = np.load(f)
         assert param["input_dim"] == self.params["input_dim"]
         assert param["hidden_dim"] == self.params["hidden_dim"]
-        self.params = np.load(f)
+        self.params = param

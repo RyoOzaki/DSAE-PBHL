@@ -1,4 +1,4 @@
-from model import SAE, SAE_PBHL
+from .model import SAE, SAE_PBHL
 
 class DSAE(object):
 

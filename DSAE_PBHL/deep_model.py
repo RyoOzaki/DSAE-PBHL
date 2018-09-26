@@ -55,9 +55,13 @@ class DSAE(object):
             x_in = network.encode(x_in)
         return self._networks[-1].feature(x_in)
 
-    def fit(self, x_train, epoch=5, epsilon=0.000001):
-        for i, network in enumerate(self._networks):
-            network.fit(x_train, epoch=epoch, epsilon=epsilon)
+    def fit(self, x_train, x_pb, epoch=5, epsilon=0.000001):
+        pbhl_net = self._networks[-1]
+        for i, network in enumerate(self._networks[:-1]):
+            if network is pbhl_net:
+                network.fit(x_train, x_pb, epoch=epoch, epsilon=epsilon)
+            else:
+                network.fit(x_train, epoch=epoch, epsilon=epsilon)
             self._params["encode_W_{}".format(i)] = network.encode_weight
             self._params["encode_b_{}".format(i)] = network.encode_bias
             self._params["decode_W_{}".format(i)] = network.decode_weight
@@ -72,8 +76,9 @@ class DSAE(object):
         self.load_params_by_dict(self, params)
 
     def load_params_by_dict(self, dic):
-        if "structure" not in dic:
-            raise RuntimeError("Does not have 'structure'.")
+        assert "structure" in dic
+        # if "structure" not in dic:
+        #     raise RuntimeError("Does not have 'structure'.")
         self._params = dic
         structure = self._params["structure"]
         self._networks = []
@@ -97,8 +102,9 @@ class DSAE(object):
             params = source
         else:
             params = np.load(source)
-        if "structure" not in params:
-            raise RuntimeError("Does not have 'structure'.")
+        assert "structure" in params
+        # if "structure" not in params:
+        #     raise RuntimeError("Does not have 'structure'.")
         instance = cls(structure)
         instance.load_params_by_dict(f)
         return instance

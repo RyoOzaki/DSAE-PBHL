@@ -68,7 +68,11 @@ class SAE(object):
     def feature(self, x_in):
         return self.encode(x_in)
 
-    def fit(self, x_train, epoch=5, epsilon=0.000001):
+    def fit(self, x_feature, x_pb, epoch=5, epsilon=0.000001):
+        assert x_feature.shape[0] == x_pb.shape[0]
+        assert x_feature.shape[1] == self._params["input_dim"][0]
+        assert x_pb.shape[1] == self._params["input_dim"][1]:
+        x_train = np.concatenate([x_feature, x_pb], axis=1)
         with tf.Session() as sess:
             optimizer = tf.train.AdamOptimizer().minimize(self._tf_loss)
             sess.run(tf.global_variables_initializer())
@@ -90,7 +94,7 @@ class SAE(object):
             self._params["decode_W"] = sess.run(self._tf_dec_weight)
             self._params["encode_b"] = sess.run(self._tf_enc_bias)
             self._params["decode_b"] = sess.run(self._tf_dec_bias)
-            
+
     def save_params(self, f):
         np.savez(f, **self._params)
 
@@ -99,8 +103,10 @@ class SAE(object):
         self.load_params_by_dict(self, params)
 
     def load_params_by_dict(self, dic):
-        if "input_dim" not in dic or "hidden_dim" not in dic:
-            raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
+        assert "input_dim" in dic
+        assert "hidden_dim" in dic
+        # if "input_dim" not in dic or "hidden_dim" not in dic:
+        #     raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
         self._params = dic
 
     @classmethod
@@ -109,8 +115,10 @@ class SAE(object):
             params = source
         else:
             params = np.load(source)
-        if "input_dim" not in params or "hidden_dim" not in params:
-            raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
+        assert "input_dim" in params
+        assert "hidden_dim" in params
+        # if "input_dim" not in params or "hidden_dim" not in params:
+        #     raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
         instance = cls(params["input_dim"], params["hidden_dim"])
         instance.load_params_by_dict(params)
         return instance

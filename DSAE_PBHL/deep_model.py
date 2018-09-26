@@ -55,13 +55,9 @@ class DSAE(object):
             x_in = network.encode(x_in)
         return self._networks[-1].feature(x_in)
 
-    def fit(self, x_train, x_pb, epoch=5, epsilon=0.000001):
-        pbhl_net = self._networks[-1]
-        for i, network in enumerate(self._networks[:-1]):
-            if network is pbhl_net:
-                network.fit(x_train, x_pb, epoch=epoch, epsilon=epsilon)
-            else:
-                network.fit(x_train, epoch=epoch, epsilon=epsilon)
+    def fit(self, x_train, epoch=5, epsilon=0.000001):
+        for i, network in enumerate(self._networks):
+            network.fit(x_train, epoch=epoch, epsilon=epsilon)
             self._params["encode_W_{}".format(i)] = network.encode_weight
             self._params["encode_b_{}".format(i)] = network.encode_bias
             self._params["decode_W_{}".format(i)] = network.decode_weight
@@ -112,8 +108,22 @@ class DSAE(object):
 class DSAE_PBHL(DSAE):
 
     def _stack_networks(self, structure, alpha, beta, eta):
-        for i in range(len(structure)-2):
+        for i in range(len(structure)-3):
             n_in = structure[i]
             n_hidden = structure[i+1]
             self._networks.append(SAE(n_in, n_hidden, alpha=alpha, beta=beta, eta=eta))
-        self._networks.append(SAE(n_in, n_hidden, alpha=alpha, beta=beta, eta=eta))
+        self._networks.append(SAE(structure[-3], structure[-2][0], alpha=alpha, beta=beta, eta=eta))
+        self._networks.append(SAE_PBHL(strucutre[-2], structure[-1], alpha=alpha, beta=beta, eta=eta))
+
+    def fit(self, x_train, x_pb, epoch=5, epsilon=0.000001):
+        pbhl_net = self._networks[-1]
+        for i, network in enumerate(self._networks):
+            if network is pbhl_net:
+                network.fit(x_train, x_pb, epoch=epoch, epsilon=epsilon)
+            else:
+                network.fit(x_train, epoch=epoch, epsilon=epsilon)
+            self._params["encode_W_{}".format(i)] = network.encode_weight
+            self._params["encode_b_{}".format(i)] = network.encode_bias
+            self._params["decode_W_{}".format(i)] = network.decode_weight
+            self._params["decode_b_{}".format(i)] = network.decode_bias
+            x_train = network.encode(x_train)

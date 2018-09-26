@@ -1,4 +1,4 @@
-from model import SAE, SAE_PBHL
+from .model import SAE, SAE_PBHL
 
 class DSAE(object):
 
@@ -101,7 +101,7 @@ class DSAE(object):
         return instance
 
 class DSAE_PBHL(DSAE):
-    
+
     def _stack_networks(self, structure, alpha, beta, eta):
         for i in range(len(structure)-2):
             n_in = structure[i]

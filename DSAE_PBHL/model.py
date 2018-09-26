@@ -1,17 +1,7 @@
 import numpy as np
 import tensorflow as tf
+from util.tf_variables import bias_variable, weight_variable
 
-#-------------------------------------------------------------------------------
-
-def weight_variable(shape, **kwargs):
-    # initial = tf.random_normal(shape, stddev=0.1)
-    initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial, **kwargs)
-
-def bias_variable(shape, **kwargs):
-    # initial = tf.random_normal(shape, stddev=0.1)
-    initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial, **kwargs)
 
 class SAE(object):
 
@@ -100,3 +90,50 @@ class SAE(object):
         sae = SAE(params["input_dim"], params["hidden_dim"])
         sae.load_params(f)
         return sae
+
+class SAE_PBHL(SAE):
+
+    def _define_network(self, n_in, n_hidden):
+        # -----------------------------
+        # v  = [x p]
+        # h  = [z s]
+        # W  = [[A B]
+        #       [O C]]
+        # W' = [[X O]
+        #       [Y Z]]
+        #
+        # h  = v W  + b
+        # v' = h W' + b'
+        # Define network-----------
+        self.input_layer = tf.placeholder(tf.float32, [None, sum(n_in)])
+
+        enc_weight_A = weight_variable([n_in[0], n_hidden[0]], trainable=True, name="encode_W_A")
+        enc_weight_B = weight_variable([n_in[0], n_hidden[1]], trainable=True, name="encode_W_B")
+        enc_weight_O =        tf.zeros([n_in[1], n_hidden[0]])
+        enc_weight_C = weight_variable([n_in[0], n_hidden[1]], trainable=True, name="encode_W_C")
+        enc_weight_AB = tf.concat([enc_weight_A, enc_weight_B], axis=1)
+        enc_weight_OC = tf.concat([enc_weight_O, enc_weight_C], axis=1)
+        self.enc_weight = tf.concat([enc_weight_AB, enc_weight_OC], axis=0)
+        self.enc_bias = bias_variable([sum(n_hidden)], trainable=True, name="encode_b")
+
+        self.hidden_layer = tf.tanh(tf.matmul(self.input_layer, self.enc_weight) + self.enc_bias)
+
+        dec_weight_X = weight_variable([n_hidden[0], n_in[0]], trainable=True, name="decode_W_X")
+        dec_weight_O =        tf.zeros([n_hidden[0], n_in[1]])
+        dec_weight_Y = weight_variable([n_hidden[1], n_in[0]], trainable=True, name="decode_W_Y")
+        dec_weight_Z = weight_variable([n_hidden[0], n_in[1]], trainable=True, name="decode_W_Z")
+        dec_weight_XO = tf.concat([dec_weight_X, dec_weight_O], axis=1)
+        dec_weight_YZ = tf.concat([dec_weight_Y, dec_weight_Z], axis=1)
+        self.dec_weight = tf.concat([dec_weight_XO, dec_weight_YZ], axis=0)
+        self.dec_bias = bias_variable([sum(n_in)], trainable=True, name="decode_b")
+
+        self.restoration_layer = tf.tanh(tf.matmul(self.hidden_layer, self.dec_weight) + self.dec_bias)
+
+    @classmethod
+    def load(cls, f):
+        params = np.load(f)
+        if "input_dim" not in params or "hidden_dim" not in params:
+            raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
+        sae_pbhl = SAE_PBHL(params["input_dim"], params["hidden_dim"])
+        sae_pbhl.load_params(f)
+        return sae_pbhl

@@ -7,15 +7,7 @@ class Normalizer(object):
             max_v = np.array(max_v)
         if min_v is not None:
             min_v = np.array(min_v)
-        if max_v is not None:
-            dim = len(max_v)
-        else:
-            dim = None
-        self.params = {"max_v": max_v, "min_v": min_v, "dim": dim}]
-
-    @property
-    def dim(self):
-        return self.params["dim"]
+        self.params = {"max_v": max_v, "min_v": min_v}
 
     @property
     def max_v(self):
@@ -23,13 +15,7 @@ class Normalizer(object):
 
     @max_v.setter
     def max_v(self, v):
-        if self.dim is None:
-            self.params["max_v"] = np.array(v)
-            self.params["dim"] = self.params["max_v"].shape[0]
-        elif self.dim == len(v):
-            self.params["max_v"] = np.array(v)
-        else:
-            raise ValueError()
+        self.params["max_v"] = np.array(v)
 
     @property
     def min_v(self):
@@ -37,17 +23,9 @@ class Normalizer(object):
 
     @min_v.setter
     def min_v(self, v):
-        if self.dim is None:
-            self.params["min_v"] = np.array(v)
-            self.params["dim"] = self.params["min_v"].shape[0]
-        elif self.dim == len(v):
-            self.params["min_v"] = np.array(v)
-        else:
-            raise ValueError()
+        self.params["min_v"] = np.array(v)
 
     def normalize(self, data):
-        if data.shape[1] != self.dim:
-            ValueError()
         if self.max_v is None:
             max_v = self.max_v = data.max(axis=0)
         if self.min_v is None:
@@ -55,13 +33,25 @@ class Normalizer(object):
         normalized = 2.0 * ((data - min_v) / (max_v - min_v)) - 1.0
         return normalized
 
+    def unnormalize(self, data):
+        if self.max_v is None or self.min_v is None:
+            raise RuntimeError("Parameters are not initialized.")
+        max_v = self.max_v
+        min_v = self.min_v
+        unnormalized = (max_v - min_v) * (data + 1.0) / 2.0 + min_v
+        return unnormalized
+
     def save_params(self, p):
         np.savez(f, **self.params)
 
     def load_params(self, f):
-        param = np.load(f)
-        if param["dim"] is not None:
-            if param["dim"] == self.dim:
-                self.params = param
-            else:
-                raise ValueError()
+        params = np.load(f)
+        if "max_v" not in params or "min_v" not in params:
+            raise RuntimeError("Parameters are not initialized.")
+        self.params = params
+
+    @classmethod
+    def load(cls, f):
+        norm = Normalizer()
+        norm.load_params(f)
+        return norm

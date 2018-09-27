@@ -33,8 +33,7 @@ class SAE(object):
         hidden_layer_reduced = (1.0 + tf.reduce_mean(self._tf_hidden_layer, axis=0)) / 2.0
 
         self._tf_restoration_loss    = tf.reduce_mean(tf.pow(self._tf_restoration_layer - self._tf_input_layer, 2)) / 2.0
-        # self._tf_regularization_loss = (tf.reduce_sum(tf.pow(self._tf_enc_weight, 2)) + tf.reduce_sum(tf.pow(self._tf_dec_weight, 2))) / 2.0
-        self._tf_regularization_loss = tf.nn.l2_loss(self._tf_enc_weight) + tf.nn.l2_loss(self._tf_enc_weight)
+        self._tf_regularization_loss = tf.nn.l2_loss(self._tf_enc_weight) + tf.nn.l2_loss(self._tf_dec_weight)
         self._tf_kl_divergence_loss  = tf.reduce_sum(
                                     eta * tf.log(eta) -
                                     eta * tf.log(hidden_layer_reduced) +

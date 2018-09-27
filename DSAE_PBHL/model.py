@@ -71,7 +71,7 @@ class SAE(object):
     def fit(self, x_feature, x_pb, epoch=5, epsilon=0.000001):
         assert x_feature.shape[0] == x_pb.shape[0]
         assert x_feature.shape[1] == self._params["input_dim"][0]
-        assert x_pb.shape[1] == self._params["input_dim"][1]:
+        assert x_pb.shape[1] == self._params["input_dim"][1]
         x_train = np.concatenate([x_feature, x_pb], axis=1)
         with tf.Session() as sess:
             optimizer = tf.train.AdamOptimizer().minimize(self._tf_loss)

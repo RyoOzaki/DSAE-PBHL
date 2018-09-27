@@ -102,7 +102,7 @@ class DSAE(object):
         assert "structure" in params
         # if "structure" not in params:
         #     raise RuntimeError("Does not have 'structure'.")
-        instance = cls(structure)
+        instance = cls(params["structure"])
         instance.load_params_by_dict(f)
         return instance
 

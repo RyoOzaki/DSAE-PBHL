@@ -1,3 +1,4 @@
+import numpy as np
 from .model import SAE, SAE_PBHL
 
 class DSAE(object):

@@ -12,7 +12,7 @@ class DSAE(object):
             self._params["decode_W_{}".format(i)] = None
             self._params["decode_b_{}".format(i)] = None
         self._networks = []
-        self._stack_networks(self, structure, alpha, beta, eta)
+        self._stack_networks(structure, alpha, beta, eta)
 
     def _stack_networks(self, structure, alpha, beta, eta):
         for i in range(len(structure)-1):

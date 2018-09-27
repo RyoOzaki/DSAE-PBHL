@@ -6,6 +6,9 @@ from .util.tf_variables import bias_variable, weight_variable
 class SAE(object):
 
     def __init__(self, n_in, n_hidden, alpha=0.003, beta=0.7, eta=0.5):
+        alpha = float(alpha)
+        beta  = float(beta)
+        eta   = float(eta)
         self._params = {"input_dim": n_in, "hidden_dim": n_hidden,
             "alpha": alpha, "beta": beta, "eta": eta,
             "encode_W": None, "encode_b": None,
@@ -43,6 +46,14 @@ class SAE(object):
         self._tf_loss = self._tf_restoration_loss + alpha * self._tf_regularization_loss + beta * self._tf_kl_divergence_loss
 
     @property
+    def input_dim(self):
+        return self._params["input_dim"]
+
+    @property
+    def hidden_dim(self):
+        return self._params["hidden_dim"]
+
+    @property
     def encode_weight(self):
         return self._params["encode_W"]
 
@@ -58,14 +69,14 @@ class SAE(object):
     def decode_bias(self):
         return self._params["decode_b"]
 
-    def encode(self, x_in):
-        return np.tanh(np.dot(x_in, self._params["encode_W"]) + self._params["encode_b"])
+    def encode(self, x_feature):
+        return np.tanh(np.dot(x_feature, self._params["encode_W"]) + self._params["encode_b"])
 
-    def decode(self, h_in):
-        return np.tanh(np.dot(h_in, self._params["decode_W"]) + self._params["decode_b"])
+    def decode(self, h_feature):
+        return np.tanh(np.dot(h_feature, self._params["decode_W"]) + self._params["decode_b"])
 
-    def feature(self, x_in):
-        return self.encode(x_in)
+    def feature(self, x_feature):
+        return self.encode(x_feature)
 
     def fit(self, x_train, epoch=5, epsilon=0.000001):
         with tf.Session() as sess:
@@ -158,7 +169,17 @@ class SAE_PBHL(SAE):
 
     def fit(self, x_feature, x_pb, epoch=5, epsilon=0.000001):
         x_train = np.concatenate([x_feature, x_pb], axis=1)
-        super(DSAE_PBHL, self).fit(x_train, epoch=epoch, epsilon=epsilon)
+        super(SAE_PBHL, self).fit(x_train, epoch=epoch, epsilon=epsilon)
 
-    def feature(self, x_in):
-        return self.encode(x_in)[:, self._params["hidden_dim"][0]]
+    def encode(self, x_feature, x_pb):
+        return super(SAE_PBHL, self).encode(np.concatenate((x_feature, x_pb), axis=1))
+
+    def decode(self, h_feature, h_pb):
+        return super(SAE_PBHL, self).decode(np.cpncatenate((h_feature, h_pb), axis=1))
+
+    def feature(self, x_feature):
+        row = self._params["input_dim"][0]
+        col = self._params["hidden_dim"][0]
+        encode_W = self._params["encode_W"][:row, :col]
+        encode_b = self._params["encode_b"][:col]
+        return np.tanh(np.dot(x_feature, encode_W) + encode_b)

@@ -132,6 +132,11 @@ class DSAE_PBHL(DSAE):
             h_in = network.decode(h_in)
         return h_in
 
+    def feature_pb(self, x_in, x_pb):
+        for network in self._networks[:-1]:
+            x_in = network.feature(x_in)
+        return network[-1].feature_pb(x_in, x_pb)
+
     def fit(self, x_in, x_pb, epoch=5, epsilon=0.000001):
         pbhl_net = self._networks[-1]
         for i, network in enumerate(self._networks):

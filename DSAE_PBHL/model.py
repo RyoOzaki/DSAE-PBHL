@@ -183,3 +183,6 @@ class SAE_PBHL(SAE):
         encode_W = self._params["encode_W"][:row, :col]
         encode_b = self._params["encode_b"][:col]
         return np.tanh(np.dot(x_in, encode_W) + encode_b)
+
+    def feature_pb(self, x_in, x_pb):
+        return self.encode(x_in, x_pb)[self._params["hidden_dim"][0]:]

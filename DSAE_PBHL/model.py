@@ -69,28 +69,28 @@ class SAE(object):
     def decode_bias(self):
         return self._params["decode_b"]
 
-    def encode(self, x_feature):
-        return np.tanh(np.dot(x_feature, self._params["encode_W"]) + self._params["encode_b"])
+    def encode(self, x_in):
+        return np.tanh(np.dot(x_in, self._params["encode_W"]) + self._params["encode_b"])
 
-    def decode(self, h_feature):
-        return np.tanh(np.dot(h_feature, self._params["decode_W"]) + self._params["decode_b"])
+    def decode(self, h_in):
+        return np.tanh(np.dot(h_in, self._params["decode_W"]) + self._params["decode_b"])
 
-    def feature(self, x_feature):
-        return self.encode(x_feature)
+    def feature(self, x_in):
+        return self.encode(x_in)
 
-    def fit(self, x_train, epoch=5, epsilon=0.000001):
+    def fit(self, x_in, epoch=5, epsilon=0.000001):
         with tf.Session() as sess:
             optimizer = tf.train.AdamOptimizer().minimize(self._tf_loss)
             sess.run(tf.global_variables_initializer())
-            last_loss = sess.run(self._tf_loss, feed_dict={self._tf_input_layer: x_train})
+            last_loss = sess.run(self._tf_loss, feed_dict={self._tf_input_layer: x_in})
             t = 0
             print('\nStep: {}'.format(t))
             print("loss: {}".format(last_loss))
             while True:
                 for _ in range(epoch):
-                    sess.run(optimizer, feed_dict={self._tf_input_layer: x_train})
+                    sess.run(optimizer, feed_dict={self._tf_input_layer: x_in})
                 t += epoch
-                loss = sess.run(self._tf_loss, feed_dict={self._tf_input_layer: x_train})
+                loss = sess.run(self._tf_loss, feed_dict={self._tf_input_layer: x_in})
                 print('\nStep: {}'.format(t))
                 print("loss: {}".format(loss))
                 if abs(last_loss - loss) < epsilon:
@@ -167,19 +167,19 @@ class SAE_PBHL(SAE):
 
         self._tf_restoration_layer = tf.tanh(tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias)
 
-    def fit(self, x_feature, x_pb, epoch=5, epsilon=0.000001):
-        x_train = np.concatenate([x_feature, x_pb], axis=1)
+    def fit(self, x_in, x_pb, epoch=5, epsilon=0.000001):
+        x_train = np.concatenate([x_in, x_pb], axis=1)
         super(SAE_PBHL, self).fit(x_train, epoch=epoch, epsilon=epsilon)
 
-    def encode(self, x_feature, x_pb):
-        return super(SAE_PBHL, self).encode(np.concatenate((x_feature, x_pb), axis=1))
+    def encode(self, x_in, x_pb):
+        return super(SAE_PBHL, self).encode(np.concatenate((x_in, x_pb), axis=1))
 
-    def decode(self, h_feature, h_pb):
-        return super(SAE_PBHL, self).decode(np.cpncatenate((h_feature, h_pb), axis=1))
+    def decode(self, h_in, h_pb):
+        return super(SAE_PBHL, self).decode(np.cpncatenate((h_in, h_pb), axis=1))
 
-    def feature(self, x_feature):
+    def feature(self, x_in):
         row = self._params["input_dim"][0]
         col = self._params["hidden_dim"][0]
         encode_W = self._params["encode_W"][:row, :col]
         encode_b = self._params["encode_b"][:col]
-        return np.tanh(np.dot(x_feature, encode_W) + encode_b)
+        return np.tanh(np.dot(x_in, encode_W) + encode_b)

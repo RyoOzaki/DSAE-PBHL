@@ -48,25 +48,25 @@ class DSAE(object):
     def networks(self):
         return self._networks
 
-    def encode(self, x_feature):
+    def encode(self, x_in):
         for network in self._networks:
-            x_feature = network.encode(x_feature)
-        return x_feature
+            x_in = network.encode(x_in)
+        return x_in
 
     def decode(self, h_feature):
         for network in self._networks[::-1]:
             h_feature = network.decode(h_feature)
         return h_feature
 
-    def feature(self, x_feature):
+    def feature(self, x_in):
         for network in self._networks:
-            x_feature = network.feature(x_feature)
-        return x_feature
+            x_in = network.feature(x_in)
+        return x_in
 
-    def fit(self, x_train, epoch=5, epsilon=0.000001):
+    def fit(self, x_in, epoch=5, epsilon=0.000001):
         for i, network in enumerate(self._networks):
-            network.fit(x_train, epoch=epoch, epsilon=epsilon)
-            x_train = network.encode(x_train)
+            network.fit(x_in, epoch=epoch, epsilon=epsilon)
+            x_in = network.encode(x_in)
             self._params["encode_W_{}".format(i)] = network.encode_weight
             self._params["encode_b_{}".format(i)] = network.encode_bias
             self._params["decode_W_{}".format(i)] = network.decode_weight
@@ -132,15 +132,15 @@ class DSAE_PBHL(DSAE):
             h_in = network.decode(h_in)
         return h_in
 
-    def fit(self, x_train, x_pb, epoch=5, epsilon=0.000001):
+    def fit(self, x_in, x_pb, epoch=5, epsilon=0.000001):
         pbhl_net = self._networks[-1]
         for i, network in enumerate(self._networks):
             if network is pbhl_net:
-                network.fit(x_train, x_pb, epoch=epoch, epsilon=epsilon)
-                # x_train = network.encode(x_train, x_pb)
+                network.fit(x_in, x_pb, epoch=epoch, epsilon=epsilon)
+                # x_in = network.encode(x_in, x_pb)
             else:
-                network.fit(x_train, epoch=epoch, epsilon=epsilon)
-                x_train = network.encode(x_train)
+                network.fit(x_in, epoch=epoch, epsilon=epsilon)
+                x_in = network.encode(x_in)
             self._params["encode_W_{}".format(i)] = network.encode_weight
             self._params["encode_b_{}".format(i)] = network.encode_bias
             self._params["decode_W_{}".format(i)] = network.decode_weight

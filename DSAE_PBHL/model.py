@@ -68,11 +68,7 @@ class SAE(object):
     def feature(self, x_in):
         return self.encode(x_in)
 
-    def fit(self, x_feature, x_pb, epoch=5, epsilon=0.000001):
-        assert x_feature.shape[0] == x_pb.shape[0]
-        assert x_feature.shape[1] == self._params["input_dim"][0]
-        assert x_pb.shape[1] == self._params["input_dim"][1]
-        x_train = np.concatenate([x_feature, x_pb], axis=1)
+    def fit(self, x_train, epoch=5, epsilon=0.000001):
         with tf.Session() as sess:
             optimizer = tf.train.AdamOptimizer().minimize(self._tf_loss)
             sess.run(tf.global_variables_initializer())
@@ -160,6 +156,10 @@ class SAE_PBHL(SAE):
         self._tf_dec_bias = bias_variable([sum(n_in)], trainable=True, name="decode_b")
 
         self._tf_restoration_layer = tf.tanh(tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias)
+
+    def fit(self, x_feature, x_pb, epoch=5, epsilon=0.000001):
+        x_train = np.concatenate([x_feature, x_pb], axis=1)
+        super(DSAE_PBHL, self).fit(x_train, epoch=epoch, epsilon=epsilon)
 
     def feature(self, x_in):
         return self.encode(x_in)[:, self._params["hidden_dim"][0]]

@@ -36,7 +36,7 @@ np.savez("DSAE_encoded.npz")
 dsae.save_params("DSAE_params.npz")
 
 
--------------------
+# -------------------
 structure = [12, 8, [5, 2], [3, 1]]
 data_pb = np.zeros((data.shape[0], 2))
 

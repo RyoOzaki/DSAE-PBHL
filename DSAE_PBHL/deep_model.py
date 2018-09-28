@@ -63,9 +63,12 @@ class DSAE(object):
             x_in = network.feature(x_in)
         return x_in
 
-    def fit(self, x_in, epoch=5, epsilon=0.000001):
+    def fit(self, x_in, print_loss=False, **kwargs):
+        N = len(self._networks)
         for i, network in enumerate(self._networks):
-            network.fit(x_in, epoch=epoch, epsilon=epsilon)
+            print("Training {0}-th network...({0}/{1})".format(i+1, N))
+            network.fit(x_in, print_loss=print_loss, **kwargs)
+            print()
             x_in = network.encode(x_in)
             self._params["encode_W_{}".format(i)] = network.encode_weight
             self._params["encode_b_{}".format(i)] = network.encode_bias
@@ -137,15 +140,18 @@ class DSAE_PBHL(DSAE):
             x_in = network.feature(x_in)
         return network[-1].feature_pb(x_in, x_pb)
 
-    def fit(self, x_in, x_pb, epoch=5, epsilon=0.000001):
+    def fit(self, x_in, x_pb, print_loss=False, **kwargs):
         pbhl_net = self._networks[-1]
+        N = len(self._networks)
         for i, network in enumerate(self._networks):
+            print("Training {0}-th network...({0}/{1})".format(i+1, N))
             if network is pbhl_net:
-                network.fit(x_in, x_pb, epoch=epoch, epsilon=epsilon)
+                network.fit(x_in, x_pb, print_loss=print_loss, **kwargs)
                 # x_in = network.encode(x_in, x_pb)
             else:
-                network.fit(x_in, epoch=epoch, epsilon=epsilon)
+                network.fit(x_in, print_loss=print_loss, **kwargs)
                 x_in = network.encode(x_in)
+            print()
             self._params["encode_W_{}".format(i)] = network.encode_weight
             self._params["encode_b_{}".format(i)] = network.encode_bias
             self._params["decode_W_{}".format(i)] = network.decode_weight

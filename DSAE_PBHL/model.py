@@ -78,28 +78,33 @@ class SAE(object):
     def feature(self, x_in):
         return self.encode(x_in)
 
-    def fit(self, x_in, epoch=5, epsilon=0.000001):
+    def fit(self, x_in, epoch=5, epsilon=0.000001, print_loss=True):
         with tf.Session() as sess:
             optimizer = tf.train.AdamOptimizer().minimize(self._tf_loss)
             sess.run(tf.global_variables_initializer())
             last_loss = sess.run(self._tf_loss, feed_dict={self._tf_input_layer: x_in})
             t = 0
-            print('\nStep: {}'.format(t))
-            print("loss: {}".format(last_loss))
+            if print_loss:
+                print('Step: {}'.format(t))
+                print("loss: {}".format(last_loss))
             while True:
                 for _ in range(epoch):
                     sess.run(optimizer, feed_dict={self._tf_input_layer: x_in})
                 t += epoch
                 loss = sess.run(self._tf_loss, feed_dict={self._tf_input_layer: x_in})
-                print('\nStep: {}'.format(t))
-                print("loss: {}".format(loss))
                 if abs(last_loss - loss) < epsilon:
                     break
+                elif print_loss:
+                    print('Step: {}'.format(t))
+                    print("Loss: {}".format(loss))
+                    print()
                 last_loss = loss
             self._params["encode_W"] = sess.run(self._tf_enc_weight)
             self._params["decode_W"] = sess.run(self._tf_dec_weight)
             self._params["encode_b"] = sess.run(self._tf_enc_bias)
             self._params["decode_b"] = sess.run(self._tf_dec_bias)
+        print('Total Step: {}'.format(t))
+        print("Final Loss: {}".format(loss))
 
     def save_params(self, f):
         np.savez(f, **self._params)
@@ -167,9 +172,9 @@ class SAE_PBHL(SAE):
 
         self._tf_restoration_layer = tf.tanh(tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias)
 
-    def fit(self, x_in, x_pb, epoch=5, epsilon=0.000001):
+    def fit(self, x_in, x_pb, **kwargs):
         x_train = np.concatenate([x_in, x_pb], axis=1)
-        super(SAE_PBHL, self).fit(x_train, epoch=epoch, epsilon=epsilon)
+        super(SAE_PBHL, self).fit(x_train, **kwargs)
 
     def encode(self, x_in, x_pb):
         return super(SAE_PBHL, self).encode(np.concatenate((x_in, x_pb), axis=1))

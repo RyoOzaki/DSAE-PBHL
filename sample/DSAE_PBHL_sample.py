@@ -28,21 +28,22 @@ data = normalizer.normalize(data_unnormalized)
 structure = [12, 8, 5, 3]
 
 dsae = DSAE(structure)
-
 dsae.fit(data)
-enc = dsae.encode(data)
-dsae.save_params("tmp.npz")
-dsae = DSAE.load("tmp.npz")
-enc2 = dsae.encode(data)
+encoded_packed = dsae.encode(data)
+encoded_unpacked = unpacking(encoded_packed, data_lengths)
+encoded_dic = {name: encoded_data for name, encoded_data in zip(data_names, encoded_unpacked)}
+np.savez("DSAE_encoded.npz")
+dsae.save_params("DSAE_params.npz")
 
-# -------------------
-# structure = [12, 8, [5, 2], [3, 1]]
-# data_pb = np.zeros((data.shape[0], 2))
-#
-# dsae = DSAE_PBHL(structure)
-#
-# dsae.fit(data, data_pb)
-# enc = dsae.feature(data)
-# dsae.save_params("tmp.npz")
-# dsae = DSAE_PBHL.load("tmp.npz")
-# enc2 = dsae.feature(data)
+
+-------------------
+structure = [12, 8, [5, 2], [3, 1]]
+data_pb = np.zeros((data.shape[0], 2))
+
+dsae_pbhl = DSAE_PBHL(structure)
+dsae_pbhl.fit(data, data_pb)
+feature_packed = dsae_pbhl.feature(data)
+feature_unpacked = unpacking(feature_packed, data_lengths)
+feature_dic = {name: feature for name, feature in zip(data_names, feature_unpacked)}
+np.savez("DSAE_PBHL_feature.npz")
+dsae_pbhl.save_params("DSAE_PBHL_params.npz")

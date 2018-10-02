@@ -41,7 +41,7 @@ class Normalizer(object):
         unnormalized = (max_v - min_v) * (data + 1.0) / 2.0 + min_v
         return unnormalized
 
-    def save_params(self, p):
+    def save_params(self, f):
         np.savez(f, **self._params)
 
     def load_params(self, f):

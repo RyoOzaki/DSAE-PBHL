@@ -2,6 +2,8 @@ import numpy as np
 import tensorflow as tf
 from .util.tf_variables import bias_variable, weight_variable
 
+def sigmoid(x):
+    return 1.0 / (1.0 + np.exp(-x))
 
 class SAE(object):
 
@@ -145,42 +147,62 @@ class SAE_PBHL(SAE):
         # W' = [[X O]
         #       [Y Z]]
         #
-        # h  = v W  + b
-        # v' = h W' + b'
+        # h  = tanh(v W  + b)
+        # v' = [x' p']
+        # x' = tanh(zX + sY + b'_1)
+        # p' = sigmoid(sZ + b'_2)
         # Define network-----------
         self._tf_input_layer = tf.placeholder(tf.float32, [None, sum(n_in)])
 
-        enc_weight_A = weight_variable([n_in[0], n_hidden[0]], trainable=True, name="encode_W_A")
-        enc_weight_B = weight_variable([n_in[0], n_hidden[1]], trainable=True, name="encode_W_B")
-        enc_weight_O =        tf.zeros([n_in[1], n_hidden[0]])
-        enc_weight_C = weight_variable([n_in[1], n_hidden[1]], trainable=True, name="encode_W_C")
+        enc_weight_A  = weight_variable([n_in[0], n_hidden[0]], trainable=True, name="encode_W_A")
+        enc_weight_B  = weight_variable([n_in[0], n_hidden[1]], trainable=True, name="encode_W_B")
+        enc_weight_O  =        tf.zeros([n_in[1], n_hidden[0]])
+        enc_weight_C  = weight_variable([n_in[1], n_hidden[1]], trainable=True, name="encode_W_C")
         enc_weight_AB = tf.concat([enc_weight_A, enc_weight_B], axis=1)
         enc_weight_OC = tf.concat([enc_weight_O, enc_weight_C], axis=1)
         self._tf_enc_weight = tf.concat([enc_weight_AB, enc_weight_OC], axis=0)
-        self._tf_enc_bias = bias_variable([sum(n_hidden)], trainable=True, name="encode_b")
+        self._tf_enc_bias   = bias_variable([sum(n_hidden)], trainable=True, name="encode_b")
 
         self._tf_hidden_layer = tf.tanh(tf.matmul(self._tf_input_layer, self._tf_enc_weight) + self._tf_enc_bias)
 
-        dec_weight_X = weight_variable([n_hidden[0], n_in[0]], trainable=True, name="decode_W_X")
-        dec_weight_O =        tf.zeros([n_hidden[0], n_in[1]])
-        dec_weight_Y = weight_variable([n_hidden[1], n_in[0]], trainable=True, name="decode_W_Y")
-        dec_weight_Z = weight_variable([n_hidden[1], n_in[1]], trainable=True, name="decode_W_Z")
+        dec_weight_X  = weight_variable([n_hidden[0], n_in[0]], trainable=True, name="decode_W_X")
+        dec_weight_O  =        tf.zeros([n_hidden[0], n_in[1]])
+        dec_weight_Y  = weight_variable([n_hidden[1], n_in[0]], trainable=True, name="decode_W_Y")
+        dec_weight_Z  = weight_variable([n_hidden[1], n_in[1]], trainable=True, name="decode_W_Z")
         dec_weight_XO = tf.concat([dec_weight_X, dec_weight_O], axis=1)
         dec_weight_YZ = tf.concat([dec_weight_Y, dec_weight_Z], axis=1)
         self._tf_dec_weight = tf.concat([dec_weight_XO, dec_weight_YZ], axis=0)
-        self._tf_dec_bias = bias_variable([sum(n_in)], trainable=True, name="decode_b")
+        self._tf_dec_bias   = bias_variable([sum(n_in)], trainable=True, name="decode_b")
 
-        self._tf_restoration_layer = tf.tanh(tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias)
+        restoration_unactivated = tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias
+        restoration_feature     = tf.tanh(restoration_unactivated[:, :n_in[0]])
+        restoration_pb          = tf.sigmoid(restoration_unactivated[:, n_in[0]:])
+        self._tf_restoration_layer = tf.concat([restoration_feature, restoration_pb], axis=1)
+        # self._tf_restoration_layer = tf.tanh(tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias)
 
     def fit(self, x_in, x_pb, **kwargs):
         x_train = np.concatenate([x_in, x_pb], axis=1)
         super(SAE_PBHL, self).fit(x_train, **kwargs)
 
     def encode(self, x_in, x_pb):
-        return super(SAE_PBHL, self).encode(np.concatenate((x_in, x_pb), axis=1))
+        return super(SAE_PBHL, self).encode(np.concatenate([x_in, x_pb], axis=1))
 
-    def decode(self, h_in, h_pb):
-        return super(SAE_PBHL, self).decode(np.cpncatenate((h_in, h_pb), axis=1))
+    def decode(self, h_concat):
+        unactivated = np.dot(h_concat, self._params["decode_W"]) + self._params["decode_b"]
+        col = self._params["input_dim"][0]
+        rest_in = np.tanh(unactivated[:, :col])
+        rest_pb = sigmoid(unactivated[:, col:])
+        return rest_in, rest_pb
+
+    def decode_pb(self, h_pb):
+        row = self._params["hidden_dim"][0]
+        col = self._params["input_dim"][0]
+        decode_W = self._params["decode_W"][row:, col:]
+        decode_b = self._params["decode_b"][col:]
+        return sigmoid(np.dot(h_pb, decode_W) + decode_b)
+
+    def decode_feature(self, h_in, h_pb):
+        return self.decode(np.concatenate([h_in, h_pb], axis=1))[0]
 
     def feature(self, x_in):
         row = self._params["input_dim"][0]
@@ -190,4 +212,8 @@ class SAE_PBHL(SAE):
         return np.tanh(np.dot(x_in, encode_W) + encode_b)
 
     def feature_pb(self, x_in, x_pb):
-        return self.encode(x_in, x_pb)[self._params["hidden_dim"][0]:]
+        x_concat = np.concatenate([x_in, x_pb], axis=1)
+        col = self._params["hidden_dim"][0]
+        encode_W = self._params["encode_W"][:, col:]
+        encode_b = self._params["encode_b"][col:]
+        return np.tanh(np.dot(x_concat, encode_W) + encode_b)

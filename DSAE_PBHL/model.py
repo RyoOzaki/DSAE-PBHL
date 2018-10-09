@@ -174,11 +174,13 @@ class SAE_PBHL(SAE):
         self._tf_dec_weight = tf.concat([dec_weight_XO, dec_weight_YZ], axis=0)
         self._tf_dec_bias   = bias_variable([sum(n_in)], trainable=True, name="decode_b")
 
-        restoration_unactivated = tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias
-        restoration_feature     = tf.tanh(restoration_unactivated[:, :n_in[0]])
-        restoration_pb          = tf.sigmoid(restoration_unactivated[:, n_in[0]:])
-        self._tf_restoration_layer = tf.concat([restoration_feature, restoration_pb], axis=1)
-        # self._tf_restoration_layer = tf.tanh(tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias)
+        self._tf_restoration_layer = tf.tanh(tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias)
+        # If we use the other activation function in parametric bias, we will use the code as follows.
+        # restoration_unactivated = tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias
+        # restoration_feature     = tf.tanh(restoration_unactivated[:, :n_in[0]])
+        # restoration_pb          = tf.sigmoid(restoration_unactivated[:, n_in[0]:])
+        # # restoration_pb          = tf.nn.softmax(restoration_unactivated[:, n_in[0]:])
+        # self._tf_restoration_layer = tf.concat([restoration_feature, restoration_pb], axis=1)
 
     def fit(self, x_in, x_pb, **kwargs):
         x_train = np.concatenate([x_in, x_pb], axis=1)
@@ -188,18 +190,22 @@ class SAE_PBHL(SAE):
         return super(SAE_PBHL, self).encode(np.concatenate([x_in, x_pb], axis=1))
 
     def decode(self, h_concat):
-        unactivated = np.dot(h_concat, self._params["decode_W"]) + self._params["decode_b"]
+        # unactivated = np.dot(h_concat, self._params["decode_W"]) + self._params["decode_b"]
+        # col = self._params["input_dim"][0]
+        # rest_in = np.tanh(unactivated[:, :col])
+        # rest_pb = sigmoid(unactivated[:, col:])
+        # return rest_in, rest_pb
+        activated = np.tanh(np.dot(h_concat, self._params["decode_W"]) + self._params["decode_b"])
         col = self._params["input_dim"][0]
-        rest_in = np.tanh(unactivated[:, :col])
-        rest_pb = sigmoid(unactivated[:, col:])
-        return rest_in, rest_pb
+        return activated[:,:col], activated[:, col:]
 
     def decode_pb(self, h_pb):
         row = self._params["hidden_dim"][0]
         col = self._params["input_dim"][0]
         decode_W = self._params["decode_W"][row:, col:]
         decode_b = self._params["decode_b"][col:]
-        return sigmoid(np.dot(h_pb, decode_W) + decode_b)
+        # return sigmoid(np.dot(h_pb, decode_W) + decode_b)
+        return np.tanh(np.dot(h_pb, decode_W) + decode_b)
 
     def decode_feature(self, h_in, h_pb):
         return self.decode(np.concatenate([h_in, h_pb], axis=1))[0]

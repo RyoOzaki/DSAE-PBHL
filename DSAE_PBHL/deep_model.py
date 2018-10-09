@@ -127,7 +127,7 @@ class DSAE_PBHL(DSAE):
     def encode(self, x_in, x_pb):
         for network in self._networks[:-1]:
             x_in = network.encode(x_in)
-        return network[-1].encode(x_in, x_pb)
+        return self._networks[-1].encode(x_in, x_pb)
 
     def decode(self, h_in, h_pb):
         h_in = network[-1].decode(h_in, h_pb)

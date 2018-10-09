@@ -135,6 +135,13 @@ class DSAE_PBHL(DSAE):
             h_in = network.decode(h_in)
         return h_in, rest_pb
 
+    def decode_feature(self, h_in, h_pb):
+        h_concat = np.concatenate([h_in, h_pb], axis=1)
+        return self.decode(h_concat)[0]
+
+    def decode_pb(self, h_pb):
+        return self._networks[-1].decode_pb(h_pb)
+
     def feature_pb(self, x_in, x_pb):
         for network in self._networks[:-1]:
             x_in = network.feature(x_in)

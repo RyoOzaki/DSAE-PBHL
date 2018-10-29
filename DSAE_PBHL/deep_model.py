@@ -116,13 +116,20 @@ class DSAE(object):
 
 class DSAE_PBHL(DSAE):
 
+    def __init__(self, *args, pb_activate_func="sigmoid", **kwargs):
+        self._pb_acivate_func = pb_activate_func
+        super(DSAE_PBHL, self).__init__(*args, **kwargs)
+        self._params["pb_activate_function"] = pb_activate_func
+
     def _stack_networks(self, structure, alpha, beta, eta):
+        pb_activator = self._pb_acivate_func
         for i in range(len(structure)-3):
             n_in = structure[i]
             n_hidden = structure[i+1]
             self._networks.append(SAE(n_in, n_hidden, alpha=alpha, beta=beta, eta=eta))
-        self._networks.append(SAE(structure[-3], structure[-2][0], alpha=alpha, beta=beta, eta=eta))
-        self._networks.append(SAE_PBHL(structure[-2], structure[-1], alpha=alpha, beta=beta, eta=eta))
+        if len(structure) >= 3:
+            self._networks.append(SAE(structure[-3], structure[-2][0], alpha=alpha, beta=beta, eta=eta))
+        self._networks.append(SAE_PBHL(structure[-2], structure[-1], alpha=alpha, beta=beta, eta=eta, pb_activate_func=pb_activator))
 
     def encode(self, x_in, x_pb):
         for network in self._networks[:-1]:
@@ -173,6 +180,45 @@ class DSAE_PBHL(DSAE):
         params = _parse_params_dict(params)
         super(DSAE_PBHL, self).load_params_by_dict(self, params)
 
+    def load_params_by_dict(self, dic):
+        assert "pb_activate_function" in dic
+        self._pb_activate_func = dic["pb_activate_function"]
+        super(DSAE_PBHL, self).load_params_by_dict(dic)
+
+    def load_params_by_dict(self, dic):
+        assert "structure" in dic
+        assert "pb_activate_function" in dic
+        self._pb_activate_func = dic["pb_activate_function"]
+        self._params = dic
+        structure = self._params["structure"]
+        self._networks = []
+        self._stack_networks(structure, self._params["alpha"], self._params["beta"], self._params["eta"])
+        for i, network in enumerate(self._networks[:-1]):
+            network.load_params_by_dict({
+                "input_dim": network.input_dim,
+                "hidden_dim": network.hidden_dim,
+                "alpha": self._params["alpha"],
+                "beta": self._params["beta"],
+                "eta": self._params["eta"],
+                "encode_W": self._params["encode_W_{}".format(i)],
+                "encode_b": self._params["encode_b_{}".format(i)],
+                "decode_W": self._params["decode_W_{}".format(i)],
+                "decode_b": self._params["decode_b_{}".format(i)]
+            })
+        i = len(self._networks) - 1
+        network = self._networks[-1]
+        network.load_params_by_dict({
+            "input_dim": network.input_dim,
+            "hidden_dim": network.hidden_dim,
+            "alpha": self._params["alpha"],
+            "beta": self._params["beta"],
+            "eta": self._params["eta"],
+            "encode_W": self._params["encode_W_{}".format(i)],
+            "encode_b": self._params["encode_b_{}".format(i)],
+            "decode_W": self._params["decode_W_{}".format(i)],
+            "decode_b": self._params["decode_b_{}".format(i)],
+            "pb_activate_function": self._params["pb_activate_function"]
+        })
 
     @classmethod
     def load(cls, source):

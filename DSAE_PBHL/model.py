@@ -5,6 +5,12 @@ from .util.tf_variables import bias_variable, weight_variable
 def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
+def softmax(x):
+    assert x.ndim == 2
+    c = np.max(x, axis=1)
+    exp_x = np.exp(x - c)
+    return exp_x / (exp_x.sum(axis=1))
+
 class SAE(object):
 
     def __init__(self, n_in, n_hidden, alpha=0.003, beta=0.7, eta=0.5):
@@ -138,6 +144,35 @@ class SAE(object):
 
 class SAE_PBHL(SAE):
 
+    # pb_activate_func will take "sigmoid", "tanh", "softmax".
+    def __init__(self, *args, pb_activate_func="sigmoid", **kwargs):
+        self._pb_activate_func = pb_activate_func
+        super(SAE_PBHL, self).__init__(*args, **kwargs)
+
+        self._params["pb_activate_function"] = pb_activate_func
+
+    def _get_pb_activation_func_tf(self):
+        func_name = self._pb_activate_func
+        if func_name == "sigmoid":
+            return tf.nn.sigmoid
+        elif func_name == "tanh":
+            return tf.nn.tanh
+        elif func_name == "softmax":
+            return tf.nn.softmax
+        else:
+            raise ValueError("{} is not supported to the activation of parametric bias.".format(func_name))
+
+    def _get_pb_activation_func(self):
+        func_name = self._pb_activate_func
+        if func_name == "sigmoid":
+            return sigmoid
+        elif func_name == "tanh":
+            return np.tanh
+        elif func_name == "softmax":
+            return tf.nn.softmax
+        else:
+            raise ValueError("{} is not supported to the activation of parametric bias.".format(func_name))
+
     def _define_network(self, n_in, n_hidden):
         # -----------------------------
         # v  = [x p]
@@ -152,6 +187,7 @@ class SAE_PBHL(SAE):
         # x' = tanh(zX + sY + b'_1)
         # p' = sigmoid(sZ + b'_2)
         # Define network-----------
+        pb_act_func = self._get_pb_activation_func_tf()
         self._tf_input_layer = tf.placeholder(tf.float32, [None, sum(n_in)])
 
         enc_weight_A  = weight_variable([n_in[0], n_hidden[0]], trainable=True, name="encode_W_A")
@@ -174,13 +210,12 @@ class SAE_PBHL(SAE):
         self._tf_dec_weight = tf.concat([dec_weight_XO, dec_weight_YZ], axis=0)
         self._tf_dec_bias   = bias_variable([sum(n_in)], trainable=True, name="decode_b")
 
-        self._tf_restoration_layer = tf.tanh(tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias)
+        # self._tf_restoration_layer = tf.tanh(tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias)
         # If we use the other activation function in parametric bias, we will use the code as follows.
-        # restoration_unactivated = tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias
-        # restoration_feature     = tf.tanh(restoration_unactivated[:, :n_in[0]])
-        # restoration_pb          = tf.sigmoid(restoration_unactivated[:, n_in[0]:])
-        # # restoration_pb          = tf.nn.softmax(restoration_unactivated[:, n_in[0]:])
-        # self._tf_restoration_layer = tf.concat([restoration_feature, restoration_pb], axis=1)
+        restoration_unactivated = tf.matmul(self._tf_hidden_layer, self._tf_dec_weight) + self._tf_dec_bias
+        restoration_feature     = tf.tanh(restoration_unactivated[:, :n_in[0]])
+        restoration_pb          = pb_act_func(restoration_unactivated[:, n_in[0]:])
+        self._tf_restoration_layer = tf.concat([restoration_feature, restoration_pb], axis=1)
 
     def fit(self, x_in, x_pb, **kwargs):
         x_train = np.concatenate([x_in, x_pb], axis=1)
@@ -190,22 +225,24 @@ class SAE_PBHL(SAE):
         return super(SAE_PBHL, self).encode(np.concatenate([x_in, x_pb], axis=1))
 
     def decode(self, h_concat):
-        # unactivated = np.dot(h_concat, self._params["decode_W"]) + self._params["decode_b"]
-        # col = self._params["input_dim"][0]
-        # rest_in = np.tanh(unactivated[:, :col])
-        # rest_pb = sigmoid(unactivated[:, col:])
-        # return rest_in, rest_pb
-        activated = np.tanh(np.dot(h_concat, self._params["decode_W"]) + self._params["decode_b"])
+        pb_act_func = self._get_pb_activation_func()
+        unactivated = np.dot(h_concat, self._params["decode_W"]) + self._params["decode_b"]
         col = self._params["input_dim"][0]
-        return activated[:,:col], activated[:, col:]
+        rest_in = np.tanh(unactivated[:, :col])
+        rest_pb = pb_act_func(unactivated[:, col:])
+        return rest_in, rest_pb
+        # activated = np.tanh(np.dot(h_concat, self._params["decode_W"]) + self._params["decode_b"])
+        # col = self._params["input_dim"][0]
+        # return activated[:,:col], activated[:, col:]
 
     def decode_pb(self, h_pb):
+        pb_act_func = self._get_pb_activation_func()
         row = self._params["hidden_dim"][0]
         col = self._params["input_dim"][0]
         decode_W = self._params["decode_W"][row:, col:]
         decode_b = self._params["decode_b"][col:]
-        # return sigmoid(np.dot(h_pb, decode_W) + decode_b)
-        return np.tanh(np.dot(h_pb, decode_W) + decode_b)
+        return pb_act_func(np.dot(h_pb, decode_W) + decode_b)
+        # return np.tanh(np.dot(h_pb, decode_W) + decode_b)
 
     def decode_feature(self, h_in, h_pb):
         return self.decode(np.concatenate([h_in, h_pb], axis=1))[0]
@@ -223,3 +260,23 @@ class SAE_PBHL(SAE):
         encode_W = self._params["encode_W"][:, col:]
         encode_b = self._params["encode_b"][col:]
         return np.tanh(np.dot(x_concat, encode_W) + encode_b)
+
+    def load_params_by_dict(self, dic):
+        assert "pb_activate_function" in dic
+        self._pb_activate_func = dic["pb_activate_function"]
+        super(SAE_PBHL, self).load_params_by_dict(dic)
+
+    @classmethod
+    def load(cls, source):
+        if type(source) is dict:
+            params = source
+        else:
+            params = np.load(source)
+        assert "input_dim" in params
+        assert "hidden_dim" in params
+        assert "pb_activate_function" in params
+        # if "input_dim" not in params or "hidden_dim" not in params:
+        #     raise RuntimeError("Does not have 'input_dim' or 'hidden_dim' or both.")
+        instance = cls(params["input_dim"], params["hidden_dim"], pb_activate_func=params["pb_activate_function"])
+        instance.load_params_by_dict(params)
+        return instance

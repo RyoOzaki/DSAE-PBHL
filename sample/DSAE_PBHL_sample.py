@@ -32,18 +32,20 @@ dsae.fit(data)
 encoded_packed = dsae.encode(data)
 encoded_unpacked = unpacking(encoded_packed, data_lengths)
 encoded_dic = {name: encoded_data for name, encoded_data in zip(data_names, encoded_unpacked)}
-np.savez("DSAE_encoded.npz")
+np.savez("DSAE_encoded.npz", **encoded_dic)
 dsae.save_params("DSAE_params.npz")
+DSAE.load("DSAE_params.npz")
 
 
 # -------------------
 structure = [12, 8, [5, 2], [3, 1]]
 data_pb = np.zeros((data.shape[0], 2))
 
-dsae_pbhl = DSAE_PBHL(structure)
+dsae_pbhl = DSAE_PBHL(structure, pb_activate_func="softmax")
 dsae_pbhl.fit(data, data_pb)
 feature_packed = dsae_pbhl.feature(data)
 feature_unpacked = unpacking(feature_packed, data_lengths)
 feature_dic = {name: feature for name, feature in zip(data_names, feature_unpacked)}
-np.savez("DSAE_PBHL_feature.npz")
+np.savez("DSAE_PBHL_feature.npz", **feature_dic)
 dsae_pbhl.save_params("DSAE_PBHL_params.npz")
+DSAE_PBHL.load("DSAE_PBHL_params.npz")

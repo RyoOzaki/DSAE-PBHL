@@ -107,10 +107,11 @@ class SAE(object):
                     print("Loss: {}".format(loss))
                     print()
                 last_loss = loss
-            self._params["encode_W"] = sess.run(self._tf_enc_weight)
-            self._params["decode_W"] = sess.run(self._tf_dec_weight)
-            self._params["encode_b"] = sess.run(self._tf_enc_bias)
-            self._params["decode_b"] = sess.run(self._tf_dec_bias)
+            ew, eb, dw, db = sess.run((self._tf_enc_weight, self._tf_enc_bias, self._tf_dec_weight, self._tf_dec_bias))
+            self._params["encode_W"] = ew
+            self._params["decode_W"] = dw
+            self._params["encode_b"] = eb
+            self._params["decode_b"] = db
         print('Total Step: {}'.format(t))
         print("Final Loss: {}".format(loss))
 

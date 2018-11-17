@@ -145,7 +145,7 @@ class DSAE(object):
         train_operator = self._tf_train_operator = []
         loss = self._tf_loss
 
-        self._tf_global_step = tf.get_variable("gobal_step", shape=(), trainable=False, dtype=tf.int32, initializer=tf.constant_initializer(0))
+        self._tf_global_step = tf.get_variable("global_step", shape=(), trainable=False, dtype=tf.int32, initializer=tf.constant_initializer(0))
         local_step = self._tf_local_step = []
         for i in range(L-1):
             with tf.variable_scope(f"{i+1}_th_network/", reuse=tf.AUTO_REUSE):

@@ -2,9 +2,8 @@ import numpy as np
 import tensorflow as tf
 from pathlib import Path
 
-from DSAE_PBHL.model import SAE, SAE_PBHL
-from DSAE_PBHL.deep_model import DSAE, DSAE_PBHL
-from DSAE_PBHL.util.normalizer import Normalizer
+from DSAE_PBHL import DSAE, DSAE_PBHL
+from DSAE_PBHL.util import Normalizer
 
 # -------------------DATA loading...
 def packing(np_objs):
@@ -24,28 +23,35 @@ data_unnormalized = packing(data_aranged)
 normalizer = Normalizer()
 data = normalizer.normalize(data_unnormalized)
 
-# -------------------
-structure = [12, 8, 5, 3]
+data_npz     = np.load("/home/ema/DSAE-PBHL/sample/DATA/data.npz")
+data_names   = data_npz.files
+data_aranged = [data_npz[name] for name in data_names]
+data_lengths = np.array([data.shape[0] for data in data_aranged])
 
-dsae = DSAE(structure)
-dsae.fit(data)
-encoded_packed = dsae.encode(data)
-encoded_unpacked = unpacking(encoded_packed, data_lengths)
-encoded_dic = {name: encoded_data for name, encoded_data in zip(data_names, encoded_unpacked)}
-np.savez("DSAE_encoded.npz", **encoded_dic)
-dsae.save_params("DSAE_params.npz")
-DSAE.load("DSAE_params.npz")
+data_unnormalized = packing(data_aranged)
+normalizer = Normalizer()
+data = normalizer.normalize(data_unnormalized)
+data_pb = np.random.randint(2, size=(data.shape[0], 2))
 
+load_parameters = False
+# network = DSAE([12, 8, 5, 3])
+network = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
+network.init_session()
+if load_parameters:
+    network.load_variables()
+else:
+    network.initialize_variables()
+network.fit(data, data_pb)
+feature = network.feature(data)
+network.close_session()
 
-# -------------------
-structure = [12, 8, [5, 2], [3, 1]]
-data_pb = np.zeros((data.shape[0], 2))
-
-dsae_pbhl = DSAE_PBHL(structure, pb_activate_func="softmax")
-dsae_pbhl.fit(data, data_pb)
-feature_packed = dsae_pbhl.feature(data)
-feature_unpacked = unpacking(feature_packed, data_lengths)
-feature_dic = {name: feature for name, feature in zip(data_names, feature_unpacked)}
-np.savez("DSAE_PBHL_feature.npz", **feature_dic)
-dsae_pbhl.save_params("DSAE_PBHL_params.npz")
-DSAE_PBHL.load("DSAE_PBHL_params.npz")
+# If you want to define tensorflow.session expressly
+# network = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
+# with tf.Session() as sess:
+#     network.set_session(sess)
+#     if load_parameters:
+#         network.load_variables()
+#     else:
+#         network.initialize_variables()
+#     network.fit(data, data_pb)
+#     feature = network.feature(data)

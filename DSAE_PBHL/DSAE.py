@@ -178,11 +178,13 @@ class DSAE(object):
         initializer = tf.global_variables_initializer()
         self._sess.run(initializer)
 
-    def load_variables(self, ckpt_file=None):
+    def load_variables(self, ckpt_dir=None, ckpt_file=None):
         assert self._sess is not None, "Session is not initialized!! Please call init_session or set_session."
         saver = tf.train.Saver()
         if ckpt_file is None:
-            ckpt = tf.train.get_checkpoint_state('./ckpt')
+            if ckpt_dir is None:
+                ckpt_dir = './ckpt'
+            ckpt = tf.train.get_checkpoint_state(ckpt_dir)
             assert ckpt is not None, "ckpt file not found."
             ckpt_file = ckpt.model_checkpoint_path
         saver.restore(self._sess, ckpt_file)

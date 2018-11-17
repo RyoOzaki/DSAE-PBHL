@@ -22,15 +22,6 @@ data_lengths = np.array([data.shape[0] for data in data_aranged])
 data_unnormalized = packing(data_aranged)
 normalizer = Normalizer()
 data = normalizer.normalize(data_unnormalized)
-
-data_npz     = np.load("/home/ema/DSAE-PBHL/sample/DATA/data.npz")
-data_names   = data_npz.files
-data_aranged = [data_npz[name] for name in data_names]
-data_lengths = np.array([data.shape[0] for data in data_aranged])
-
-data_unnormalized = packing(data_aranged)
-normalizer = Normalizer()
-data = normalizer.normalize(data_unnormalized)
 data_pb = np.random.randint(2, size=(data.shape[0], 2))
 
 load_parameters = False
@@ -45,7 +36,7 @@ network.fit(data, data_pb)
 feature = network.feature(data)
 network.close_session()
 
-# If you want to define tensorflow.session expressly
+# If you want to define tf.session expressly
 # network = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
 # with tf.Session() as sess:
 #     network.set_session(sess)

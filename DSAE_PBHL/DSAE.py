@@ -150,8 +150,8 @@ class DSAE(object):
                     target_loss = loss[i]
                     target_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=f"{i+1}_th_network/")
 
-                    optimizer = tf.train.AdamOptimizer()
-                    train_ope = optimizer.minimize(target_loss, var_list=target_variables)
+                    optimizer = tf.train.AdamOptimizer(name="optimizer")
+                    train_ope = optimizer.minimize(target_loss, var_list=target_variables, name="train_operator")
             train_operator.append(train_ope)
 
     def _define_summary(self):

@@ -145,13 +145,17 @@ class DSAE(object):
         train_operator = self._tf_train_operator = []
         loss = self._tf_loss
 
+        self._tf_global_step = tf.get_variable("gobal_step", shape=(), trainable=False, dtype=tf.int32, initializer=tf.constant_initializer(0))
+        local_step = self._tf_local_step = []
         for i in range(L-1):
             with tf.variable_scope(f"{i+1}_th_network/", reuse=tf.AUTO_REUSE):
                     target_loss = loss[i]
                     target_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=f"{i+1}_th_network/")
 
+                    l_step = tf.get_variable("local_step", shape=(), trainable=False, dtype=tf.int32, initializer=tf.constant_initializer(0))
+                    local_step.append(l_step)
                     optimizer = tf.train.AdamOptimizer(name="optimizer")
-                    train_ope = optimizer.minimize(target_loss, var_list=target_variables, name="train_operator")
+                    train_ope = optimizer.minimize(target_loss, var_list=target_variables, name="train_operator", global_step=l_step)
             train_operator.append(train_ope)
 
     def _define_summary(self):
@@ -180,7 +184,8 @@ class DSAE(object):
 
     def load_variables(self, ckpt_dir=None, ckpt_file=None):
         assert self._sess is not None, "Session is not initialized!! Please call init_session or set_session."
-        saver = tf.train.Saver()
+        self.initialize_variables()
+        saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
         if ckpt_file is None:
             if ckpt_dir is None:
                 ckpt_dir = './ckpt'
@@ -197,7 +202,7 @@ class DSAE(object):
             ckpt_file = "ckpt/model.ckpt"
         if summary_prefix is None:
             summary_prefix = "graph"
-        saver = tf.train.Saver()
+        saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
         feed_dict = {self._tf_input: x_in}
         if extended_feed_dict is not None:
             feed_dict = {**extended_feed_dict, **feed_dict}
@@ -207,14 +212,14 @@ class DSAE(object):
         elif type(train_network) == int:
             train_network = [train_network, ]
 
-        global_step = 0
+        increment_global_step = tf.assign_add(self._tf_global_step, 1, name='increment_global_step')
         for target_network in train_network:
-            local_step = 0
             summary_writer = tf.summary.FileWriter(f"{summary_prefix}/{target_network}_th_network_train", sess.graph)
             tf_summary = self._tf_summary[target_network-1]
             train_operator = self._tf_train_operator[target_network-1]
             tf_loss = self._tf_loss[target_network-1]
-            last_loss = sess.run(tf_loss, feed_dict=feed_dict)
+            global_step, local_step, last_loss = sess.run((self._tf_global_step, self._tf_local_step[target_network-1], tf_loss), feed_dict=feed_dict)
+
             if print_loss:
                 print(f"Training network: {target_network}")
                 print(f"Global step: {global_step}")
@@ -223,10 +228,8 @@ class DSAE(object):
                 print()
             while True:
                 for _ in range_epoch:
-                    sess.run(train_operator, feed_dict=feed_dict)
-                global_step += epoch
-                local_step += epoch
-                summary, loss = sess.run((tf_summary, tf_loss), feed_dict=feed_dict)
+                    sess.run((train_operator, increment_global_step), feed_dict=feed_dict)
+                global_step, local_step, summary, loss = sess.run((self._tf_global_step, self._tf_local_step[target_network-1], tf_summary, tf_loss), feed_dict=feed_dict)
                 summary_writer.add_summary(summary, local_step)
                 saver.save(sess, ckpt_file, global_step=global_step)
 

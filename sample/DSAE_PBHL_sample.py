@@ -32,17 +32,20 @@ if load_parameters:
     network.load_variables()
 else:
     network.initialize_variables()
-network.fit(data, data_pb)
+network.fit(data, data_pb, epoch=10, epsilon=0.01)
 feature = network.feature(data)
 network.close_session()
 
+tf.reset_default_graph()
 # If you want to define tf.session expressly
-# network = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
-# with tf.Session() as sess:
-#     network.set_session(sess)
-#     if load_parameters:
-#         network.load_variables()
-#     else:
-#         network.initialize_variables()
-#     network.fit(data, data_pb)
-#     feature = network.feature(data)
+network = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
+load_parameters = True
+with tf.Session() as sess:
+    network.set_session(sess)
+    if load_parameters:
+        network.load_variables()
+    else:
+        network.initialize_variables()
+    network.fit(data, data_pb, epsilon=0.001, summary_prefix="graph2")
+    feature = network.feature(data)
+network.close_session()

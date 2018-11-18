@@ -40,11 +40,9 @@ class DSAE_PBHL(DSAE):
 
                     with tf.variable_scope("encoder", reuse=tf.AUTO_REUSE):
                         with tf.variable_scope("parameters", reuse=tf.AUTO_REUSE):
-                            enc_weight_A = tf.get_variable("encoder_weight_A", shape=(structure[i], structure[i+1]), initializer=weight_initializer)
-                            enc_weight_B = tf.get_variable("encoder_weight_B", shape=(structure[i], pb_structure[1]), initializer=weight_initializer)
+                            enc_weight_AB = tf.get_variable("encoder_weight_AB", shape=(structure[i], structure[i+1]+pb_structure[1]), initializer=weight_initializer)
                             enc_weight_O = tf.zeros((pb_structure[0], structure[i+1]), name="encoder_weight_O")
                             enc_weight_C = tf.get_variable("encoder_weight_C", shape=(pb_structure[0], pb_structure[1]))
-                            enc_weight_AB = tf.concat((enc_weight_A, enc_weight_B), axis=1, name="encoder_weight_AB")
                             enc_weight_OC = tf.concat((enc_weight_O, enc_weight_C), axis=1, name="encoder_weight_OC")
                             enc_weight = tf.concat((enc_weight_AB, enc_weight_OC), axis=0, name="encoder_weight")
                             enc_bias = tf.get_variable("encoder_bias", shape=(structure[i+1]+pb_structure[1], ), initializer=bias_initializer)
@@ -56,10 +54,8 @@ class DSAE_PBHL(DSAE):
                         with tf.variable_scope("parameters", reuse=tf.AUTO_REUSE):
                             dec_weight_X = tf.get_variable("decoder_weight_X", shape=(structure[i+1], structure[i]), initializer=weight_initializer)
                             dec_weight_O = tf.zeros((structure[i+1], pb_structure[0]), name="decoder_weight_O")
-                            dec_weight_Y = tf.get_variable("decoder_weight_Y", shape=(pb_structure[1], structure[i]), initializer=weight_initializer)
-                            dec_weight_Z = tf.get_variable("decoder_weight_Z", shape=(pb_structure[1], pb_structure[0]), initializer=weight_initializer)
                             dec_weight_XO = tf.concat((dec_weight_X, dec_weight_O), axis=1, name="decoder_weight_XO")
-                            dec_weight_YZ = tf.concat((dec_weight_Y, dec_weight_Z), axis=1, name="decoder_weitht_YZ")
+                            dec_weight_YZ = tf.get_variable("decoder_weight_YZ", shape=(pb_structure[1], structure[i]+pb_structure[0]), initializer=weight_initializer)
                             dec_weight = tf.concat((dec_weight_XO, dec_weight_YZ), axis=0, name="deocder_weight")
                             dec_bias = tf.get_variable("decoder_bias", shape=(structure[i]+pb_structure[0], ), initializer=bias_initializer)
                         with tf.variable_scope("restoration_layer", reuse=tf.AUTO_REUSE):

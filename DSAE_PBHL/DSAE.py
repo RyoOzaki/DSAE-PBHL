@@ -242,6 +242,7 @@ class DSAE(object):
                     print(f"Loss: {loss}")
                     print()
                 last_loss = loss
+            summary_writer.close()
 
     def encode(self, x_in):
         assert self._sess is not None, "Session is not initialized!! Please call initialize_variables or load_variables."

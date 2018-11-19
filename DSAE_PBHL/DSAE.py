@@ -222,8 +222,9 @@ class DSAE(object):
             tf_summary = self._tf_summary[target_network-1]
             train_operator = self._tf_train_operator[target_network-1]
             tf_loss = self._tf_loss[target_network-1]
-            global_step, local_step, last_loss = sess.run((self._tf_global_step, self._tf_local_step[target_network-1], tf_loss), feed_dict=feed_dict)
-
+            global_step, local_step, summary, last_loss = sess.run((self._tf_global_step, self._tf_local_step[target_network-1], tf_summary, tf_loss), feed_dict=feed_dict)
+            summary_writer.add_summary(summary, local_step)
+            saver.save(sess, ckpt_file, global_step=global_step)
             if print_loss:
                 print(f"Training network: {target_network}")
                 print(f"Global step: {global_step}")

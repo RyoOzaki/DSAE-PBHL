@@ -26,26 +26,25 @@ data_pb = np.random.randint(2, size=(data.shape[0], 2))
 
 load_parameters = False
 # network = DSAE([12, 8, 5, 3])
-network = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
-network.init_session()
-if load_parameters:
-    network.load_variables()
-else:
-    network.initialize_variables()
-network.fit(data, data_pb, epoch=10, epsilon=0.01)
-feature = network.feature(data)
-network.close_session()
-
-tf.reset_default_graph()
-# If you want to define tf.session expressly
-network = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
-load_parameters = True
-with tf.Session() as sess:
-    network.set_session(sess)
+with tf.Graph().as_default():
+    network = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
+    network.init_session()
     if load_parameters:
         network.load_variables()
     else:
         network.initialize_variables()
-    network.fit(data, data_pb, epsilon=0.001, summary_prefix="graph2")
+    network.fit(data, data_pb, epoch=10, epsilon=0.01, summary_prefix="graph_1")
     feature = network.feature(data)
-network.close_session()
+    network.close_session()
+
+load_parameters = True
+with tf.Graph().as_default():
+    network2 = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
+    network2.init_session()
+    if load_parameters:
+        network2.load_variables()
+    else:
+        network2.initialize_variables()
+    network2.fit(data, data_pb, epoch=10, epsilon=0.0001, summary_prefix="graph_2")
+    feature = network2.feature(data)
+    network2.close_session()

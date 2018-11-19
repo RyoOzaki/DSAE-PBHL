@@ -86,7 +86,11 @@ class DSAE_PBHL(DSAE):
                             restoration = activator(tf.matmul(hidden, dec_weight) + dec_bias)
                             restoration = tf.identity(restoration, name="restoration_layer")
 
+                tf.summary.histogram("encoder_weight", enc_weight)
+                tf.summary.histogram("encoder_bias", enc_bias)
                 tf.summary.histogram("hidden_layer", hidden)
+                tf.summary.histogram("decoder_weight")
+                tf.summary.histogram("decoder_bias")
 
             encode_weight.append(enc_weight)
             encode_bias.append(enc_bias)

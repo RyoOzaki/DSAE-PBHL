@@ -78,8 +78,8 @@ class DSAE(object):
                 tf.summary.histogram("encoder_weight", enc_weight)
                 tf.summary.histogram("encoder_bias", enc_bias)
                 tf.summary.histogram("hidden_layer", hidden)
-                tf.summary.histogram("decoder_weight")
-                tf.summary.histogram("decoder_bias")
+                tf.summary.histogram("decoder_weight", dec_weight)
+                tf.summary.histogram("decoder_bias", dec_bias)
 
             encode_weight.append(enc_weight)
             encode_bias.append(enc_bias)

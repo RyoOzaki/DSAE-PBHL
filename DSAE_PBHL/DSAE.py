@@ -254,3 +254,6 @@ class DSAE(object):
         sess = self._sess
         feed_dict = {self._tf_input: x_in}
         return sess.run(self._tf_hidden, feed_dict=feed_dict)
+
+    def feature(self, x_in):
+        return self.encode(x_in)

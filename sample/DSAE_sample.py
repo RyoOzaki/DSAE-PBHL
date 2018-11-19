@@ -24,19 +24,17 @@ data_lengths = np.array([data.shape[0] for data in data_aranged])
 data_unnormalized = packing(data_aranged)
 normalizer = Normalizer()
 data = normalizer.normalize(data_unnormalized)
-data_pb = np.random.randint(2, size=(data.shape[0], 2))
-
 load_parameters = False
 graph = tf.Graph()
 with graph.as_default():
-    network = DSAE_PBHL([12, 8, 5, 3], [2, 1], pb_activator=tf.nn.softmax)
+    network = DSAE([12, 8, 5, 3])
     network.init_session()
     if load_parameters:
         network.load_variables()
     else:
         network.initialize_variables()
-    network.fit(data, data_pb, epoch=10, epsilon=0.01)
-    feature = network.feature(data)
+    network.fit(data, epoch=10, epsilon=0.01)
+    feature = network.encode(data)
     network.close_session()
 
 plt.subplot(1, 2, 1)

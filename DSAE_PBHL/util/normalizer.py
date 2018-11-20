@@ -27,10 +27,10 @@ class Normalizer(object):
 
     def normalize(self, data):
         if self.max_v is None:
-            max_v = self.max_v = data.max(axis=0)
+            self.max_v = data.max(axis=0)
         if self.min_v is None:
-            min_v = self.min_v = data.min(axis=0)
-        normalized = 2.0 * ((data - min_v) / (max_v - min_v)) - 1.0
+            self.min_v = data.min(axis=0)
+        normalized = 2.0 * ((data - self.min_v) / (self.max_v - self.min_v)) - 1.0
         return normalized
 
     def unnormalize(self, data):

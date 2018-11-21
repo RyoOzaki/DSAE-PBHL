@@ -35,8 +35,10 @@ with graph.as_default():
         network.load_variables()
     else:
         network.initialize_variables()
-    network.fit(data, data_pb, epoch=10, epsilon=0.01)
+        network.fit(data, data_pb, epoch=10, epsilon=0.01)
+    encode = network.encode(data, data_pb)
     feature = network.feature(data)
+    decode = network.decode(encode[:, :3], encode[:, 3:])
     network.close_session()
 
 plt.subplot(1, 2, 1)
@@ -46,5 +48,17 @@ plt.xlabel("Input features")
 plt.subplot(1, 2, 2)
 plt.plot(feature[:100])
 plt.xlabel("Compressed features")
+
+plt.show()
+
+plt.clf()
+
+plt.subplot(1, 2, 1)
+plt.plot(data[:100])
+plt.xlabel("Input features")
+
+plt.subplot(1, 2, 2)
+plt.plot(decode[:100])
+plt.xlabel("Restorated features")
 
 plt.show()

@@ -32,6 +32,7 @@ class DSAE(object):
         self.eta = eta
 
         self._stack_network()
+        self._stack_restoration_network()
         # self._define_decode_network()
         self._define_loss()
         self._define_train_operator()
@@ -89,6 +90,21 @@ class DSAE(object):
             decode_layer.append(restoration)
 
         self._tf_hidden = hidden
+
+    def _stack_restoration_network(self):
+        structure = self.structure
+        activator = self.activator
+        L = len(self.structure)
+        decode_weight = self._tf_decode_weight
+        decode_bias = self._tf_decode_bias
+        current_input = self._tf_decode_input = tf.placeholder(tf.float32, [None, structure[-1]], name="restorator_input")
+        for i in range(L-1)[::-1]:
+            with tf.variable_scope(f"{i+1}_th_network/", reuse=tf.AUTO_REUSE):
+                with tf.variable_scope("restorator", reuse=tf.AUTO_REUSE):
+                    restoration = activator(tf.matmul(current_input, decode_weight[i]) + decode_bias[i])
+                    restoration = tf.identity(restoration, name="restoration_layer")
+                    current_input = restoration
+        self._tf_decode_output = restoration
 
     def _define_loss(self):
         structure = self.structure
@@ -257,3 +273,9 @@ class DSAE(object):
 
     def feature(self, x_in):
         return self.encode(x_in)
+
+    def decode(self, h_in):
+        assert self._sess is not None, "Session is not initialized!! Please call initialize_variables or load_variables."
+        sess = self._sess
+        feed_dict = {self._tf_decode_input: h_in}
+        return sess.run(self._tf_decode_output, feed_dict=feed_dict)

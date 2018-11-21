@@ -24,6 +24,7 @@ data_lengths = np.array([data.shape[0] for data in data_aranged])
 data_unnormalized = packing(data_aranged)
 normalizer = Normalizer()
 data = normalizer.normalize(data_unnormalized)
+
 load_parameters = False
 graph = tf.Graph()
 with graph.as_default():
@@ -33,8 +34,9 @@ with graph.as_default():
         network.load_variables()
     else:
         network.initialize_variables()
-    network.fit(data, epoch=10, epsilon=0.01)
-    feature = network.encode(data)
+        network.fit(data, epoch=10, epsilon=0.01)
+    encode = network.encode(data)
+    decode = network.decode(encode)
     network.close_session()
 
 plt.subplot(1, 2, 1)
@@ -42,7 +44,21 @@ plt.plot(data[:100])
 plt.xlabel("Input features")
 
 plt.subplot(1, 2, 2)
-plt.plot(feature[:100])
+plt.plot(encode[:100])
 plt.xlabel("Compressed features")
+
+plt.show()
+
+plt.clf()
+
+plt.subplot(1, 2, 1)
+plt.plot(data[:100])
+plt.xlabel("Input features")
+
+plt.subplot(1, 2, 2)
+plt.plot(decode[:100])
+plt.xlabel("Restorated features")
+
+print(decode.shape)
 
 plt.show()

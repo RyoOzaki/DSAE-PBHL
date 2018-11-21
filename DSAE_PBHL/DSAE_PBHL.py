@@ -101,6 +101,28 @@ class DSAE_PBHL(DSAE):
 
         self._tf_hidden = hidden
 
+    def _stack_restoration_network(self):
+        structure = self.structure
+        pb_structure = self.pb_structure
+        activator = self.activator
+        L = len(self.structure)
+        decode_weight = self._tf_decode_weight
+        decode_bias = self._tf_decode_bias
+        input = self._tf_decode_input = tf.placeholder(tf.float32, [None, structure[-1]], name="restorator_input")
+        pb_input = self._tf_decode_pb_input = tf.placeholder(tf.float32, [None, pb_structure[-1]], name="restorator_pb_input")
+
+        current_input = tf.concat((input, pb_input), axis=1)
+        for i in range(L-1)[::-1]:
+            with tf.variable_scope(f"{i+1}_th_network/", reuse=tf.AUTO_REUSE):
+                with tf.variable_scope("restorator", reuse=tf.AUTO_REUSE):
+                    unactivate = tf.matmul(current_input, decode_weight[i]) + decode_bias[i]
+                    if i == L-2:
+                        unactivate = unactivate[:, :structure[-2]]
+                    restoration = activator(unactivate)
+                    restoration = tf.identity(restoration, name="restoration_layer")
+                    current_input = restoration
+        self._tf_decode_output = restoration
+
     def _define_loss(self):
         structure = self.structure
         pb_structure = self.pb_structure
@@ -178,3 +200,9 @@ class DSAE_PBHL(DSAE):
         N = x_in.shape[0]
         dummy_pb_input = np.zeros((N, self.pb_structure[0]))
         return self.encode(x_in, dummy_pb_input)[:, :self.structure[-1]]
+
+    def decode(self, h_in, h_pb_in):
+        assert self._sess is not None, "Session is not initialized!! Please call initialize_variables or load_variables."
+        sess = self._sess
+        feed_dict = {self._tf_decode_input: h_in, self._tf_decode_pb_input: h_pb_in}
+        return sess.run(self._tf_decode_output, feed_dict=feed_dict)

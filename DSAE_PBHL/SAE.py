@@ -1,6 +1,5 @@
 import tensorflow as tf
-
-from DSAE_PBHL import AE
+from .AE import AE
 
 class SAE(AE):
     """

@@ -1,2 +1,2 @@
-from .normalizer import Normalizer
-from .functions import merge_dict
+from .normalizer import *
+from .functions import *

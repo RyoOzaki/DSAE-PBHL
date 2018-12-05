@@ -1,7 +1,8 @@
 import tensorflow as tf
-from DSAE_PBHL.util import merge_dict
+from .Model import Model
+from .util import merge_dict
 
-class AE(object):
+class AE(Model):
     """
     AE: Auto-encoder
     """

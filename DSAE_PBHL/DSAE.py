@@ -1,33 +1,23 @@
-import tensorflow as tf
-from DSAE_PBHL import DAE, AE, SAE
-
-class DSAE_Soft(DAE):
-    _a_soft_network_class = AE
-    _a_network_class = SAE
-
-    def _stack_network(self, soft_kwargs=None, hard_kwargs=None):
-        if soft_kwargs is None:
-            soft_kwargs = {}
-        if hard_kwargs is None:
-            hard_kwargs = {}
-        structure = self._structure
-        networks = self._networks = []
-        L = self._L
-
-        i = 0
-        with tf.variable_scope(f"{i+1}_th_network"):
-            net = self._a_soft_network_class(structure[0], structure[1], **soft_kwargs)
-        networks.append(net)
-        hidden_layer = net.hidden_layer
-        for i in range(1, L-2):
-            with tf.variable_scope(f"{i+1}_th_network"):
-                net = self._a_soft_network_class(structure[i], structure[i+1], input_layer=hidden_layer, **soft_kwargs)
-            hidden_layer = net.hidden_layer
-            networks.append(net)
-        i = L - 2
-        with tf.variable_scope(f"{i+1}_th_network"):
-            net = self._a_network_class(structure[i], structure[i+1], input_layer=hidden_layer, **hard_kwargs)
-        networks.append(net)
+from .Deep_Model import Deep_Model
+from .AE import AE
+from .SAE import SAE
+from .DAE import DAE
 
 class DSAE(DAE):
     _a_network_class = SAE
+
+class DSAE_Soft(Deep_Model):
+    _a_base_network_class = AE
+    _a_final_network_class = SAE
+
+    def __init__(self, structure, kwargs_dict=None, final_kwargs_dict=None):
+        if kwargs_dict is None:
+            kwargs_dict = {}
+        if final_kwargs_dict is None:
+            final_kwargs_dict = {}
+        L = len(structure)
+        classes = [self._a_base_network_class, ] * (L - 2)
+        classes.append(self._a_final_network_class)
+        network_kwargs = [kwargs_dict, ] * (L - 2)
+        network_kwargs.append(final_kwargs_dict)
+        super(DSAE_Soft, self).__init__(structure, classes, network_kwargs)

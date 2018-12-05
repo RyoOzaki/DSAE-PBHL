@@ -1,5 +1,5 @@
-from .Model import Model, PB_Model
-from .Deep_Model import Deep_Model, Deep_PB_Model
+from ..Model import Model, PB_Model
+from ..Deep_Model import Deep_Model, Deep_PB_Model
 
 class Builder(object):
 
@@ -10,6 +10,10 @@ class Builder(object):
         self._pb_input_dim = pb_input_dim
         self._pb_hidden_dim = -1
         self._has_pb_net = False
+        if pb_input_dim > 0:
+            self._model_class = Deep_PB_Model
+        else:
+            self._model_class = Deep_Model
 
     def stack(self, network_class, hidden_dim, pb_hidden_dim=-1, **kwargs):
         assert issubclass(network_class, (Model, PB_Model))
@@ -23,21 +27,26 @@ class Builder(object):
         self._network_kwargs.append(kwargs)
 
     def build(self):
+        return self._model_class(*self.get_build_args())
+
+    def get_build_class(self):
+        return self._model_class
+
+    def get_build_args(self):
         if self._pb_input_dim > 0:
             assert self._has_pb_net
-            obj = Deep_PB_Model(
+            return (
                 self._network_node,
                 [self._pb_input_dim, self._pb_hidden_dim],
                 self._network_class,
                 self._network_kwargs
                 )
         else:
-            obj = Deep_Model(
-                self._network_node,
-                self._network_class,
-                self._network_kwargs
-                )
-        return obj
+            return (
+            self._network_node,
+            self._network_class,
+            self._network_kwargs
+            )
 
     # Default format: "{tab}{class_name}[{input_dim} -> {hidden_dim} -> {input_dim}, {kwargs}]"
     # index, tab, class_name, kwargs, input_dim, hidden_dim

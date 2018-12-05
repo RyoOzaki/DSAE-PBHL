@@ -43,10 +43,10 @@ class Builder(object):
                 )
         else:
             return (
-            self._network_node,
-            self._network_class,
-            self._network_kwargs
-            )
+                self._network_node,
+                self._network_class,
+                self._network_kwargs
+                )
 
     # Default format: "{tab}{class_name}[{input_dim} -> {hidden_dim} -> {input_dim}, {kwargs}]"
     # index, tab, class_name, kwargs, input_dim, hidden_dim

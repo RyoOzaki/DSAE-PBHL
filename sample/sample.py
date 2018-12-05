@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from DSAE_PBHL import Builder
+from DSAE_PBHL.util import Builder
 from DSAE_PBHL import AE, SAE, SAE_PBHL
 from DSAE_PBHL import DAE, DSAE, DSAE_PBHL
 from DSAE_PBHL import DSAE_Soft, DSAE_PBHL_Soft
@@ -44,7 +44,7 @@ tf.reset_default_graph()
 # If you want to make a more complex model, please use builder in DSAE_PBHL.util.
 # The builder.stack() saves a recipe of complex network, and builder.build() makes a network by the recipe.
 # Therefore, if you need to use the tf.variable_scope, you need to apply it to the builder.build().
-# In addition, the builder is saving the recipe after called builder.build(), so, you can make the same structure network using builder.build().
+# In addition, the builder stores the recipe even after called builder.build(), so, you can make the same structure network using builder.build().
 # But, you can not call builder.build() over 2 times in the same tf.variable_scope.
 
 builder = Builder(30, pb_input_dim=3)

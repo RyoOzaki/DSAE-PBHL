@@ -39,7 +39,7 @@ with tf.Session() as sess:
     print(res_2[:-1])
 
 tf.reset_default_graph()
-#===============================================================================
+# ===============================================================================
 
 # If you want to make a more complex model, please use builder in DSAE_PBHL.util.
 # The builder.stack() saves a recipe of complex network, and builder.build() makes a network by the recipe.

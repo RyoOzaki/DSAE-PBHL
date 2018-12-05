@@ -7,5 +7,3 @@ from .Deep_Model import *
 from .DAE import *
 from .DSAE import *
 from .DSAE_PBHL import *
-
-from .builder import Builder

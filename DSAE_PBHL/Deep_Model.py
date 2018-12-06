@@ -39,6 +39,10 @@ class Deep_Model(object):
     def hidden_layers(self):
         return [net.hidden_layer for net in self.networks]
 
+    def hidden_layers_with_eval(self, sess, input, extended_feed_dict=None):
+        feed_dict = merge_dict({self.input_layer: input}, extended_feed_dict)
+        return sess.run(self.hidden_layers, feed_dict=feed_dict)
+
     @property
     def input_layer(self):
         return self.networks[0].input_layer
@@ -47,16 +51,20 @@ class Deep_Model(object):
     def losses(self):
         return [net.loss for net in self.networks]
 
+    def losses_with_eval(self, sess, input, extended_feed_dict=None):
+        feed_dict = merge_dict({self.input_layer: input}, extended_feed_dict)
+        return sess.run(self.losses, feed_dict=feed_dict)
+
     def fit(self, sess, target_network_id, input, epoch, extended_feed_dict=None, summary_writer=None):
         target_network = self.networks[target_network_id]
         feed_dict = merge_dict({self.input_layer: input}, extended_feed_dict)
         train_operator = target_network.train_operator
         for _ in range(epoch):
             sess.run(train_operator, feed_dict=feed_dict)
-        step, loss, summary  = sess.run([target_network.local_step, target_network.loss, target_network.summary], feed_dict=feed_dict)
+        loss, step, summary  = sess.run([target_network.loss, target_network.local_step, target_network.summary], feed_dict=feed_dict)
         if summary_writer is not None:
             summary_writer.add_summary(summary, step)
-        return step, loss, summary
+        return loss, step, summary
 
 
 class Deep_PB_Model(Deep_Model):
@@ -99,6 +107,14 @@ class Deep_PB_Model(Deep_Model):
     @property
     def input_layer_pb(self):
         return self._input_layer_pb
+
+    def hidden_layers_with_eval(self, sess, input, input_pb, extended_feed_dict=None):
+        feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)
+        return super(Deep_PB_Model, self).hidden_layers_with_eval(sess, input, extended_feed_dict=feed_dict)
+
+    def losses_with_eval(self, sess, input, input_pb, extended_feed_dict=None):
+        feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)
+        return super(Deep_PB_Model, self).losses_with_eval(sess, input, extended_feed_dict=feed_dict)
 
     def fit(self, sess, target_network_id, input, input_pb, epoch, extended_feed_dict=None, **kwargs):
         feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)

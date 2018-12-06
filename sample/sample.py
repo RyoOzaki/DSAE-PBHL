@@ -78,7 +78,7 @@ with tf.Session() as sess:
         for _ in range(100):
             dsae_pbhl.fit(sess, idx, input, input_pb, 10, summary_writer=summary_writer)
             # or
-            # step, loss, summary = dsae_pbhl.fit(sess, idx, input, input_pb, 10)
+            # loss, step, summary = dsae_pbhl.fit(sess, idx, input, input_pb, 10)
             # summary_writer.add_summary(summary, step)
         summary_writer.close()
 

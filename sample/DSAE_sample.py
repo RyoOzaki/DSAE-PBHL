@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from pathlib import Path
 
-from DSAE_PBHL import DSAE, DSAE_PBHL
+from DSAE_PBHL import DSAE
 from DSAE_PBHL.util import Normalizer
 
 import matplotlib.pyplot as plt
@@ -25,40 +25,35 @@ data_unnormalized = packing(data_aranged)
 normalizer = Normalizer()
 data = normalizer.normalize(data_unnormalized)
 
-load_parameters = False
-graph = tf.Graph()
-with graph.as_default():
-    network = DSAE([12, 8, 5, 3])
-    network.init_session()
-    if load_parameters:
-        network.load_variables()
-    else:
-        network.initialize_variables()
-        network.fit(data, epoch=10, epsilon=0.01)
-    encode = network.encode(data)
-    decode = network.decode(encode)
-    network.close_session()
+with tf.variable_scope("DSAE_sample"):
+    dsae = DSAE([12, 8, 5, 3])
+
+T = 100
+epoch = 10
+global_step = 0
+L = len(dsae.networks)
+ckpt_file = "ckpt/model.ckpt"
+saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
+with tf.Session() as sess:
+    initializer = tf.global_variables_initializer()
+    sess.run(initializer)
+    for idx in range(L):
+        summary_writer = tf.summary.FileWriter(f"graph/{idx+1}_th_network", sess.graph)
+        print(f"Training {idx+1} th network.")
+        for t in range(T):
+            # print(f"{global_step}: {idx+1}/{L}, {t+1}/{T}")
+            saver.save(sess, ckpt_file, global_step=global_step)
+            for _ in range(epoch):
+                dsae.fit(sess, idx, data, epoch, summary_writer=summary_writer)
+            global_step += epoch
+    feature = dsae.hidden_layers_with_eval(sess, data)[-1]
 
 plt.subplot(1, 2, 1)
 plt.plot(data[:100])
 plt.xlabel("Input features")
 
 plt.subplot(1, 2, 2)
-plt.plot(encode[:100])
+plt.plot(feature[:100])
 plt.xlabel("Compressed features")
-
-plt.show()
-
-plt.clf()
-
-plt.subplot(1, 2, 1)
-plt.plot(data[:100])
-plt.xlabel("Input features")
-
-plt.subplot(1, 2, 2)
-plt.plot(decode[:100])
-plt.xlabel("Restorated features")
-
-print(decode.shape)
 
 plt.show()

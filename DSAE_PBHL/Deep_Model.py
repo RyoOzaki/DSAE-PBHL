@@ -74,8 +74,8 @@ class Deep_Model(object):
         epoch_range = range(epoch)
         for _ in epoch_range:
             sess.run(train_operator, feed_dict=feed_dict)
-        loss = sess.run([target_network.loss], feed_dict=feed_dict)
-        cross_loss = sess.run([target_network.loss], feed_dict=cross_feed_dict)
+        loss = sess.run(target_network.loss, feed_dict=feed_dict)
+        cross_loss = sess.run(target_network.loss, feed_dict=cross_feed_dict)
         if summary_writer is not None:
             step, summary  = sess.run([target_network.local_step, target_network.summary], feed_dict=feed_dict)
             summary_writer.add_summary(summary, step)

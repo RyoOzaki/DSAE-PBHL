@@ -9,7 +9,7 @@ with open('MIT-LICENSE.txt') as f:
 
 setup(
     name='DSAE_PBHL',
-    version='0.0.1',
+    version='1.0.0',
     description='Package of the sparse autoencoder (SAE), deep SAE (DASE), SAE with parametric bias in hidden layer (SAE with PBHL), and DSAE with PBHL',
     long_description=readme,
     author='Ryo Ozaki',

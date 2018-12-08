@@ -66,6 +66,22 @@ class Deep_Model(object):
             summary_writer.add_summary(summary, step)
         return loss, step, summary
 
+    def fit_with_cross(self, sess, target_network_id, input, cross_input, epoch, extended_feed_dict=None, cross_extended_feed_dict=None, summary_writer=None, cross_summary_writer=None):
+        target_network = self.networks[target_network_id]
+        feed_dict = merge_dict({self.input_layer: input}, extended_feed_dict)
+        cross_feed_dict = merge_dict({self.input_layer: cross_input}, cross_extended_feed_dict)
+        train_operator = target_network.train_operator
+        epoch_range = range(epoch)
+        for _ in epoch_range:
+            sess.run(train_operator, feed_dict=feed_dict)
+        if summary_writer is not None:
+            step, summary  = sess.run([target_network.local_step, target_network.summary], feed_dict=feed_dict)
+            summary_writer.add_summary(summary, step)
+        if cross_summary_writer is not None:
+            step, summary  = sess.run([target_network.local_step, target_network.summary], feed_dict=cross_feed_dict)
+            cross_summary_writer.add_summary(summary, step)
+        return
+
     def fit_until(self, sess, target_network_id, input, epoch, epsilon, extended_feed_dict=None, summary_writer=None, ckpt_file=None, global_step=0):
         feed_dict = merge_dict({self.input_layer: input}, extended_feed_dict)
         if ckpt_file is not None:
@@ -141,6 +157,11 @@ class Deep_PB_Model(Deep_Model):
     def fit(self, sess, target_network_id, input, input_pb, epoch, extended_feed_dict=None, **kwargs):
         feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)
         return super(Deep_PB_Model, self).fit(sess, target_network_id, input, epoch, extended_feed_dict=feed_dict, **kwargs)
+
+    def fit_with_cross(self, sess, target_network_id, input, cross_input, input_pb, cross_input_pb, epoch, extended_feed_dict=None, cross_extended_feed_dict=None, **kwargs):
+        feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)
+        cross_feed_dict = merge_dict({self.input_layer_pb: cross_input_pb}, cross_extended_feed_dict)
+        super(Deep_PB_Model, self).fit_with_cross(sess, target_network_id, input, cross_input, extended_feed_dict=feed_dict, cross_extended_feed_dict=cross_feed_dict, **kwargs)
 
     def fit_until(self, sess, target_network_id, input, input_pb, epoch, epsilon, extended_feed_dict=None, **kwargs):
         feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)

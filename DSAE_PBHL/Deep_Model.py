@@ -10,7 +10,6 @@ class Deep_Model(object):
         classes,
         network_kwargs
         ):
-        self._global_step = 0
         self._structure = structure
         self._L = len(structure)
 
@@ -59,13 +58,35 @@ class Deep_Model(object):
         target_network = self.networks[target_network_id]
         feed_dict = merge_dict({self.input_layer: input}, extended_feed_dict)
         train_operator = target_network.train_operator
-        for _ in range(epoch):
+        epoch_range = range(epoch)
+        for _ in epoch_range:
             sess.run(train_operator, feed_dict=feed_dict)
         loss, step, summary  = sess.run([target_network.loss, target_network.local_step, target_network.summary], feed_dict=feed_dict)
         if summary_writer is not None:
             summary_writer.add_summary(summary, step)
         return loss, step, summary
 
+    def fit_until(self, sess, target_network_id, input, epoch, epsilon, extended_feed_dict=None, summary_writer=None, ckpt_file=None, global_step=0):
+        feed_dict = merge_dict({self.input_layer: input}, extended_feed_dict)
+        if ckpt_file is not None:
+            saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
+        target_network = self.networks[target_network_id]
+        loss = target_network.loss
+        train_ope = target_network.train_operator
+        last_loss = sess.run(loss, feed_dict=feed_dict)
+        epsilon *= epoch
+        epoch_range = range(epoch)
+        while True:
+            for _ in epoch_range:
+                sess.run(train_ope, feed_dict=feed_dict)
+            global_step += epoch
+            new_loss, local_step, summary = sess.run([loss, target_network.local_step, target_network.summary], feed_dict=feed_dict)
+            if summary_writer is not None:
+                summary_writer.add_summary(summary, local_step)
+            if abs(new_loss - last_loss) < epsilon:
+                break
+            last_loss = new_loss
+        return global_step
 
 class Deep_PB_Model(Deep_Model):
 
@@ -119,3 +140,7 @@ class Deep_PB_Model(Deep_Model):
     def fit(self, sess, target_network_id, input, input_pb, epoch, extended_feed_dict=None, **kwargs):
         feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)
         return super(Deep_PB_Model, self).fit(sess, target_network_id, input, epoch, extended_feed_dict=feed_dict, **kwargs)
+
+    def fit_until(self, sess, target_network_id, input, input_pb, epoch, epsilon, extended_feed_dict=None, **kwargs):
+        feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)
+        return super(Deep_PB_Model, self).fit_until(sess, target_network_id, input, epoch, epsilon, extended_feed_dict=feed_dict, **kwargs)

@@ -69,6 +69,7 @@ builder.stack(SAE, 2, beta=1, alpha=0.09)
 with tf.variable_scope("DSAE_PBHL_sample"):
     dsae_pbhl = builder.build()
 
+print(hekfe)
 with tf.Session() as sess:
     initializer = tf.global_variables_initializer()
     sess.run(initializer)
@@ -81,6 +82,11 @@ with tf.Session() as sess:
             # loss, step, summary = dsae_pbhl.fit(sess, idx, input, input_pb, 10)
             # summary_writer.add_summary(summary, step)
         summary_writer.close()
+
+# with tf.Session() as sess:
+#     initializer = tf.global_variables_initializer()
+#     sess.run(initializer)
+#     dsae_pbhl.fit_until(sess, 0, input, input_pb, 10, 0.00000000001)
 
 tf.reset_default_graph()
 #===============================================================================

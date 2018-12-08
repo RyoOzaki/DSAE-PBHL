@@ -163,7 +163,7 @@ class Deep_PB_Model(Deep_Model):
     def fit_with_cross(self, sess, target_network_id, input, cross_input, input_pb, cross_input_pb, epoch, extended_feed_dict=None, cross_extended_feed_dict=None, **kwargs):
         feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)
         cross_feed_dict = merge_dict({self.input_layer_pb: cross_input_pb}, cross_extended_feed_dict)
-        return super(Deep_PB_Model, self).fit_with_cross(sess, target_network_id, input, cross_input, extended_feed_dict=feed_dict, cross_extended_feed_dict=cross_feed_dict, **kwargs)
+        return super(Deep_PB_Model, self).fit_with_cross(sess, target_network_id, input, cross_input, epoch, extended_feed_dict=feed_dict, cross_extended_feed_dict=cross_feed_dict, **kwargs)
 
     def fit_until(self, sess, target_network_id, input, input_pb, epoch, epsilon, extended_feed_dict=None, **kwargs):
         feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)

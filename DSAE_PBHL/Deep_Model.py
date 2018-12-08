@@ -129,8 +129,9 @@ class Deep_PB_Model(Deep_Model):
     def input_layer_pb(self):
         return self._input_layer_pb
 
-    def hidden_layers_with_eval(self, sess, input, input_pb, extended_feed_dict=None):
-        feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)
+    def hidden_layers_with_eval(self, sess, input, extended_feed_dict=None):
+        dummy_input_pb = np.zeros((input.shape[0], self._pb_structure[0]))
+        feed_dict = merge_dict({self.input_layer_pb: dummy_input_pb}, extended_feed_dict)
         return super(Deep_PB_Model, self).hidden_layers_with_eval(sess, input, extended_feed_dict=feed_dict)
 
     def losses_with_eval(self, sess, input, input_pb, extended_feed_dict=None):

@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 from .util import merge_dict
 from .Model import Model, PB_Model

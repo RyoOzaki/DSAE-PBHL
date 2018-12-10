@@ -85,7 +85,9 @@ class Deep_Model(object):
             cross_summary_writer.add_summary(summary, step)
         return loss, cross_loss
 
-    def fit_until(self, sess, target_network_id, input, epoch, epsilon, extended_feed_dict=None, summary_writer=None, ckpt_file=None, global_step=0):
+    def fit_until(self, sess, target_network_id, input, epoch, epsilon, extended_feed_dict=None, summary_writer=None, ckpt_file=None, global_step=None):
+        if global_step is None:
+            global_step = 0
         feed_dict = merge_dict({self.input_layer: input}, extended_feed_dict)
         if ckpt_file is not None:
             saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
@@ -130,6 +132,7 @@ class Deep_PB_Model(Deep_Model):
             if issubclass(classes[0], PB_Model):
                 net = classes[0](structure[0], structure[1], pb_structure[0], pb_structure[1], **network_kwargs[0])
                 self._input_layer_pb = net.input_layer_pb
+                self._hidden_layer_pb = net.hidden_layer_pb
             else:
                 net = classes[0](structure[0], structure[1], **network_kwargs[0])
         networks.append(net)
@@ -139,6 +142,7 @@ class Deep_PB_Model(Deep_Model):
                 if issubclass(classes[i], PB_Model):
                     net = classes[i](structure[i], structure[i+1], pb_structure[0], pb_structure[0], input_layer=hidden_layer, **network_kwargs[i])
                     self._input_layer_pb = net.input_layer_pb
+                    self._hidden_layer_pb = net.hidden_layer_pb
                 else:
                     net = classes[i](structure[i], structure[i+1], input_layer=hidden_layer, **network_kwargs[i])
             hidden_layer = net.hidden_layer
@@ -148,10 +152,18 @@ class Deep_PB_Model(Deep_Model):
     def input_layer_pb(self):
         return self._input_layer_pb
 
+    @property
+    def hidden_layer_pb(self):
+        return self._hidden_layer_pb
+
     def hidden_layers_with_eval(self, sess, input, extended_feed_dict=None):
         dummy_input_pb = np.zeros((input.shape[0], self._pb_structure[0]))
         feed_dict = merge_dict({self.input_layer_pb: dummy_input_pb}, extended_feed_dict)
         return super(Deep_PB_Model, self).hidden_layers_with_eval(sess, input, extended_feed_dict=feed_dict)
+
+    def hidden_layer_pb_with_eval(self, sess, input, input_pb, extended_feed_dict=None):
+        feed_dict = merge_dict({self.input_layer: input, self.input_layer_pb: input_pb}, extended_feed_dict)
+        return sess.run(self.hidden_layer_pb, feed_dict=feed_dict)
 
     def losses_with_eval(self, sess, input, input_pb, extended_feed_dict=None):
         feed_dict = merge_dict({self.input_layer_pb: input_pb}, extended_feed_dict)

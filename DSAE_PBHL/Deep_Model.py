@@ -140,7 +140,7 @@ class Deep_PB_Model(Deep_Model):
         for i in range(1, L-1):
             with tf.variable_scope(f"{i+1}_th_network"):
                 if issubclass(classes[i], PB_Model):
-                    net = classes[i](structure[i], structure[i+1], pb_structure[0], pb_structure[0], input_layer=hidden_layer, **network_kwargs[i])
+                    net = classes[i](structure[i], structure[i+1], pb_structure[0], pb_structure[1], input_layer=hidden_layer, **network_kwargs[i])
                     self._input_layer_pb = net.input_layer_pb
                     self._hidden_layer_pb = net.hidden_layer_pb
                 else:

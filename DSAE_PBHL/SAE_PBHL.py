@@ -75,8 +75,8 @@ class SAE_PBHL(SAE, PB_Model):
 
         self._input_layer  = input_layer
         self._hidden_layer = hidden_layer
-        self._hidden_layer_feature = hidden_layer[:, :hidden_dim_feat]
-        self._hidden_layer_pb      = hidden_layer[:, hidden_dim_feat:]
+        self._hidden_layer_feature = tf.identity(hidden_layer[:, :hidden_dim_feat], "hidden_layer_feature")
+        self._hidden_layer_pb      = tf.identity(hidden_layer[:, hidden_dim_feat:], "hidden_layer_pb")
         self._restoration_layer_feature = restoration_layer_feature
         self._restoration_layer_pb      = restoration_layer_pb
         self._restoration_layer = restoration_layer

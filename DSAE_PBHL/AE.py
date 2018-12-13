@@ -91,7 +91,7 @@ class AE(Model):
     def _get_restoration_loss(self):
         input  = self._input_layer
         output = self._restoration_layer
-        loss = tf.reduce_mean((input - output)**2)
+        loss = tf.reduce_mean((input - output)**2) / 2.0
         loss = tf.identity(loss, "restoration_loss")
         return loss
 

@@ -39,7 +39,8 @@ class SAE(AE):
         self._loss = loss
 
     def _get_regularization_loss(self):
-        regu_loss = tf.nn.l2_loss(self._encoder_weight) + tf.nn.l2_loss(self._decoder_weight)
+        regu_loss = tf.reduce_sum(self._encoder_weight**2) + tf.reduce_sum(self._decoder_weight**2)
+        regu_loss /= 2.0
         regu_loss = tf.identity(regu_loss, "regularization_loss")
         return regu_loss
 

@@ -26,9 +26,12 @@ class SAE(AE):
 
     def _define_loss(self):
         with tf.variable_scope("losses"):
-            rest_loss = super(SAE, self)._get_restoration_loss()
-            regu_loss = self._get_regularization_loss()
-            kl_loss   = self._get_kl_divergence_loss()
+            with tf.variable_scope("restoration_loss"):
+                rest_loss = super(SAE, self)._get_restoration_loss()
+            with tf.variable_scope("regularization_loss"):
+                regu_loss = self._get_regularization_loss()
+            with tf.variable_scope("kl_divergence_loss"):
+                kl_loss   = self._get_kl_divergence_loss()
 
             loss = rest_loss + self._alpha * regu_loss + self._beta * kl_loss
             loss = tf.identity(loss, "total_loss")

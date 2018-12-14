@@ -50,17 +50,21 @@ class AE(Model):
         decoder_activator = self._decoder_activator
 
         with tf.variable_scope("parameters"):
-            encoder_weight = tf.get_variable("encoder_weight", shape=(input_dim, hidden_dim), initializer=weight_initializer)
-            encoder_bias   = tf.get_variable("encoder_bias", shape=(hidden_dim, ), initializer=bias_initializer)
-            decoder_weight = tf.get_variable("decoder_weight", shape=(hidden_dim, input_dim), initializer=weight_initializer)
-            decoder_bias   = tf.get_variable("decoder_bias", shape=(input_dim, ), initializer=bias_initializer)
+            with tf.variable_scope("encoder"):
+                encoder_weight = tf.get_variable("encoder_weight", shape=(input_dim, hidden_dim), initializer=weight_initializer)
+                encoder_bias   = tf.get_variable("encoder_bias", shape=(hidden_dim, ), initializer=bias_initializer)
+            with tf.variable_scope("decoder"):
+                decoder_weight = tf.get_variable("decoder_weight", shape=(hidden_dim, input_dim), initializer=weight_initializer)
+                decoder_bias   = tf.get_variable("decoder_bias", shape=(input_dim, ), initializer=bias_initializer)
 
         with tf.variable_scope("layers"):
             input_layer       = self._input_layer
-            hidden_layer      = encoder_activator(tf.matmul(input_layer, encoder_weight) + encoder_bias)
-            hidden_layer      = tf.identity(hidden_layer, "hidden_layer")
-            restoration_layer = decoder_activator(tf.matmul(hidden_layer, decoder_weight) + decoder_bias)
-            restoration_layer = tf.identity(restoration_layer, "restoration_layer")
+            with tf.variable_scope("hidden_layer"):
+                hidden_layer      = encoder_activator(tf.matmul(input_layer, encoder_weight) + encoder_bias)
+                hidden_layer      = tf.identity(hidden_layer, "hidden_layer")
+            with tf.variable_scope("restoration_layer"):
+                restoration_layer = decoder_activator(tf.matmul(hidden_layer, decoder_weight) + decoder_bias)
+                restoration_layer = tf.identity(restoration_layer, "restoration_layer")
 
         self._encoder_weight = encoder_weight
         self._encoder_bias   = encoder_bias
@@ -75,7 +79,8 @@ class AE(Model):
 
     def _define_loss(self):
         with tf.variable_scope("losses"):
-            restoration_loss = self._get_restoration_loss()
+            with tf.variable_scope("restoration_loss"):
+                restoration_loss = self._get_restoration_loss()
             self._loss = restoration_loss
 
     def _collect_summary(self):

@@ -95,7 +95,6 @@ class Deep_Model(object):
         loss = target_network.loss
         train_ope = target_network.train_operator
         last_loss = sess.run(loss, feed_dict=feed_dict)
-        epsilon *= epoch
         epoch_range = range(epoch)
         while True:
             for _ in epoch_range:

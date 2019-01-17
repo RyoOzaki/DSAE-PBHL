@@ -12,8 +12,8 @@ class AE(Model):
         activator=tf.nn.tanh,
         encoder_activator=None,
         decoder_activator=None,
-        weight_initializer=tf.initializers.truncated_normal,
-        bias_initializer=tf.initializers.truncated_normal
+        weight_initializer=None,
+        bias_initializer=None
         ):
         assert input_dim > 0 and hidden_dim > 0
         assert activator is not None or (encoder_activator is not None and decoder_activator is not None)
@@ -27,6 +27,10 @@ class AE(Model):
             encoder_activator = activator
         if decoder_activator is None:
             decoder_activator = activator
+        if weight_initializer is None:
+            weight_initializer = tf.initializers.truncated_normal(stddev=3.0)
+        if bias_initializer is None:
+            bias_initializer = tf.initializers.truncated_normal(stddev=3.0)
         self._encoder_activator = encoder_activator
         self._decoder_activator = decoder_activator
 
@@ -96,7 +100,7 @@ class AE(Model):
     def _get_restoration_loss(self):
         input  = self._input_layer
         output = self._restoration_layer
-        loss = tf.reduce_sum(tf.reduce_mean((input - output)**2, axis=0)) / 2.0
+        loss = 0.5 * tf.reduce_mean(tf.reduce_sum((input - output)**2, axis=1))
         loss = tf.identity(loss, "restoration_loss")
         return loss
 
@@ -173,7 +177,7 @@ class AE(Model):
         train_operator = self.train_operator
         for _ in range(epoch):
             sess.run(train_operator, feed_dict=feed_dict)
-        result = sess.run([self.local_step, self.loss, self.summary], feed_dict=feed_dict)
+        loss, step, summary = sess.run([self.loss, self.local_step, self.summary], feed_dict=feed_dict)
         if summary_writer is not None:
-            summary_writer.add_summary(result[2], result[0])
+            summary_writer.add_summary(summary, step)
         return result

@@ -42,13 +42,12 @@ class SAE(AE):
         self._loss = loss
 
     def _get_regularization_loss(self):
-        regu_loss = tf.reduce_sum(self._encoder_weight**2) + tf.reduce_sum(self._decoder_weight**2)
-        regu_loss /= 2.0
+        regu_loss = 0.5 * (tf.reduce_sum(self._encoder_weight**2) + tf.reduce_sum(self._decoder_weight**2))
         regu_loss = tf.identity(regu_loss, "regularization_loss")
         return regu_loss
 
     def _get_kl_divergence_loss(self):
-        hidden_normalized = (1.0 + tf.reduce_mean(self._hidden_layer, axis=0)) / 2.0
+        hidden_normalized = 0.5 * (1.0 + tf.reduce_mean(self._hidden_layer, axis=0))
         kl_loss = tf.reduce_sum(
                 self._eta * tf.log(self._eta) -
                 self._eta * tf.log(hidden_normalized) +

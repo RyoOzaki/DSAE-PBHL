@@ -23,21 +23,15 @@ class AE(Model):
         self._weight_initializer = weight_initializer
         self._bias_initializer = bias_initializer
 
-        if encoder_activator is None:
-            encoder_activator = activator
-        if decoder_activator is None:
-            decoder_activator = activator
-        if weight_initializer is None:
-            weight_initializer = tf.initializers.truncated_normal(stddev=3.0)
-        if bias_initializer is None:
-            bias_initializer = tf.initializers.truncated_normal(stddev=3.0)
+        encoder_activator  = encoder_activator  or activator
+        decoder_activator  = decoder_activator  or activator
+        weight_initializer = weight_initializer or tf.initializers.truncated_normal(stddev=3.0)
+        bias_initializer   = bias_initializer   or tf.initializers.truncated_normal(stddev=3.0)
+
         self._encoder_activator = encoder_activator
         self._decoder_activator = decoder_activator
 
-        if input_layer is None:
-            self._input_layer = tf.placeholder(tf.float32, [None, input_dim], name="input_layer")
-        else:
-            self._input_layer = input_layer
+        self._input_layer = input_layer or tf.placeholder(tf.float32, [None, input_dim], name="input_layer")
         self._stack_network()
         self._define_loss()
         self._summary = tf.summary.merge(self._collect_summary())

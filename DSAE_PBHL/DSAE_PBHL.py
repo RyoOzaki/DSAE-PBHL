@@ -9,10 +9,8 @@ class DSAE_PBHL_Soft(Deep_PB_Model):
     _a_final_network_class = SAE_PBHL
 
     def __init__(self, structure, pb_structure, kwargs_dict=None, final_kwargs_dict=None):
-        if kwargs_dict is None:
-            kwargs_dict = {}
-        if final_kwargs_dict is None:
-            final_kwargs_dict = {}
+        kwargs_dict = kwargs_dict or {}
+        final_kwargs_dict = final_kwargs_dict or {}
 
         builder = Builder(structure[0], pb_input_dim=pb_structure[0])
         for node in structure[1:-1]:

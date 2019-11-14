@@ -18,10 +18,8 @@ class SAE_PBHL(SAE, PB_Model):
         self._input_dim_pb  = input_dim_pb
         self._hidden_dim_pb = hidden_dim_pb
         self._activator_pb  = activator_pb
-        if input_layer is None:
-            self._input_layer_feature = tf.placeholder(tf.float32, [None, input_dim_feat], name="input_layer_feature")
-        else:
-            self._input_layer_feature = input_layer
+        self._input_layer_feature = input_layer or tf.placeholder(tf.float32, [None, input_dim_feat], name="input_layer_feature")
+
         self._input_layer_pb = tf.placeholder(tf.float32, [None, input_dim_pb], name="input_layer_pb")
         self._input_layer = tf.concat((self._input_layer_feature, self._input_layer_pb), axis=1)
         super(SAE_PBHL, self).__init__(input_dim_feat + input_dim_pb, hidden_dim_feat + hidden_dim_pb, input_layer=self._input_layer, **kwargs)

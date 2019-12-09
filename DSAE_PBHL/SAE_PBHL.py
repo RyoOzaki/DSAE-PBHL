@@ -18,7 +18,7 @@ class SAE_PBHL(SAE, PB_Model):
         self._input_dim_pb  = input_dim_pb
         self._hidden_dim_pb = hidden_dim_pb
         self._activator_pb  = activator_pb
-        self._input_layer_feature = input_layer or tf.placeholder(tf.float32, [None, input_dim_feat], name="input_layer_feature")
+        self._input_layer_feature = input_layer if input_layer is not None else tf.placeholder(tf.float32, [None, input_dim_feat], name="input_layer_feature")
 
         self._input_layer_pb = tf.placeholder(tf.float32, [None, input_dim_pb], name="input_layer_pb")
         self._input_layer = tf.concat((self._input_layer_feature, self._input_layer_pb), axis=1)
@@ -84,6 +84,7 @@ class SAE_PBHL(SAE, PB_Model):
         self._restoration_layer = restoration_layer
 
         self._trainable_variables = [encoder_weight_AB, encoder_weight_C, encoder_bias, decoder_weight_X, decoder_weight_YZ, decoder_bias]
+        self._parameters = {"encoder_weight": encoder_weight, "encoder_bias": encoder_bias, "decoder_weight": decoder_weight, "decoder_bias": decoder_bias}
 
     def _collect_summary(self):
         sup_list = super(SAE_PBHL, self)._collect_summary()

@@ -23,15 +23,15 @@ class AE(Model):
         self._weight_initializer = weight_initializer
         self._bias_initializer = bias_initializer
 
-        encoder_activator  = encoder_activator  or activator
-        decoder_activator  = decoder_activator  or activator
-        weight_initializer = weight_initializer or tf.initializers.truncated_normal(stddev=3.0)
-        bias_initializer   = bias_initializer   or tf.initializers.truncated_normal(stddev=3.0)
+        encoder_activator  = encoder_activator if encoder_activator is not None else activator
+        decoder_activator  = decoder_activator if decoder_activator is not None else  activator
+        weight_initializer = weight_initializer if weight_initializer is not None else tf.initializers.truncated_normal(stddev=3.0)
+        bias_initializer   = bias_initializer if bias_initializer is not None else tf.initializers.truncated_normal(stddev=3.0)
 
         self._encoder_activator = encoder_activator
         self._decoder_activator = decoder_activator
 
-        self._input_layer = input_layer or tf.placeholder(tf.float32, [None, input_dim], name="input_layer")
+        self._input_layer = input_layer if input_layer is not None else tf.placeholder(tf.float32, [None, input_dim], name="input_layer")
         self._stack_network()
         self._define_loss()
         self._summary = tf.summary.merge(self._collect_summary())
@@ -74,6 +74,7 @@ class AE(Model):
         self._restoration_layer = restoration_layer
 
         self._trainable_variables = [encoder_weight, encoder_bias, decoder_weight, decoder_bias]
+        self._parameters = {"encoder_weight": encoder_weight, "encoder_bias": encoder_bias, "decoder_weight": decoder_weight, "decoder_bias": decoder_bias}
 
     def _define_loss(self):
         with tf.variable_scope("losses"):
@@ -133,6 +134,10 @@ class AE(Model):
     @property
     def trainable_variables(self):
         return self._trainable_variables
+
+    @property
+    def params(self):
+        return self._parameters
 
     @property
     def encoder_weight(self):

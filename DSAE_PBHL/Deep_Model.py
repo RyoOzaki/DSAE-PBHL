@@ -39,6 +39,13 @@ class Deep_Model(object):
     def hidden_layers(self):
         return [net.hidden_layer for net in self.networks]
 
+    @property
+    def params(self):
+        param_dict = {}
+        for i, net in enumerate(self.networks):
+            param_dict[f"{i+1}_th_network"] = net.params
+        return param_dict
+
     def hidden_layers_with_eval(self, sess, input, extended_feed_dict=None):
         feed_dict = merge_dict({self.input_layer: input}, extended_feed_dict)
         return sess.run(self.hidden_layers, feed_dict=feed_dict)

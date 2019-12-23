@@ -1,4 +1,4 @@
-from .SAE_PBHL import DSAE_PBHL_Soft
+from .DSAE_PBHL import DSAE_PBHL_Soft
 from .AE import AE
 from .SAE import SAE
 from .SAE_PBHL_v2 import SAE_PBHL_v2

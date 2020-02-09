@@ -2,4 +2,4 @@
 
 # Requirements
 + numpy
-+ tensorflow
++ tensorflow: 1.13.1
